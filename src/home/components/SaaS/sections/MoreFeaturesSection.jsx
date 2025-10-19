@@ -58,7 +58,7 @@ const MoreFeaturesSection = () => {
           </p>
         </AnimatedSection>
 
-        {/* Feature Cards - Icono mejor alineado */}
+        {/* Feature Cards - Con efecto hover de elevación y borde azul */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <AnimatedSection
@@ -66,7 +66,7 @@ const MoreFeaturesSection = () => {
               direction={index % 2 === 0 ? "left" : "right"}
               delay={0.3 * (index + 1)}
             >
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 h-full">
+              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 transition-all duration-300 h-full transform hover:-translate-y-2 hover:shadow-xl hover:border-blue-400">
                 {/* Diseño compacto con icono mejor alineado */}
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 mt-1">
