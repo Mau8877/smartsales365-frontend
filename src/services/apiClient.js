@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";//"http://localhost:8000/api";
+// Usar variable de entorno con valor por defecto
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL
 
 class ApiClient {
   constructor() {
@@ -30,108 +32,60 @@ class ApiClient {
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("userData");
-          window.location.href = "/";
+          window.location.href = "/login";
         }
         return Promise.reject(error);
       }
     );
   }
 
-  async login(correo, password) {
+  // ========== AUTH ENDPOINTS ==========
+  async login(email, password) {
     try {
-      const response = await this.client.post("/cuentas/usuarios/login/", {
-        correo,
+      const response = await this.client.post("/usuarios/users/login/", {
+        email,
         password,
       });
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.detail || "Error de autenticación");
+      throw new Error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Error de autenticación"
+      );
     }
   }
 
-  // Métodos simples y directos
+  async logout() {
+    try {
+      const response = await this.client.post("/usuarios/users/logout/");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userData");
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Error al cerrar sesión"
+      );
+    }
+  }
+
+  // ========== MÉTODOS HTTP GENÉRICOS ==========
   async get(url) {
     try {
       const response = await this.client.get(url);
       return response.data;
     } catch (error) {
       throw new Error(
-        error.response?.data?.detail || error.message || "Error en la petición"
+        error.response?.data?.detail ||
+          error.response?.data?.error ||
+          error.message ||
+          "Error en la petición"
       );
     }
   }
 
-  // Auth endpoints
-
- async logout() {
-  try {
-    const response = await this.client.post('cuentas/usuarios/logout/',
-      {},
-      {
-        headers:{
-          Authorization: localStorage.getItem('token')
-        }
-    });
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.detail || error.message || 'Error al cerrar sesión'
-    );
-  }
-}
-
-
-
-  async getToken2Reset(correo) {
-    try {
-      const response = await this.client.post('cuentas/usuarios/solicitar_reset_token/', { correo });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.detail || error.message || 'Error al solicitar token de reseteo');
-    }
-  }
-
-  async resetPassword(correo, reset_token, new_password) {
-    try {
-      const response = await this.client.post('cuentas/usuarios/nueva_password/', { correo, reset_token, new_password });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.detail || error.message || 'Error al restablecer contraseña');
-    }
-  }
-
-  async register(userData) {
-    try {
-      const response = await this.client.post('cuentas/usuarios/', userData);
-      return response.data;
-    } catch (error) {
-      const errorData = error.response?.data;
-      if (errorData) {
-        if (typeof errorData === 'object' && !errorData.detail) {
-          const firstField = Object.keys(errorData)[0];
-          const firstError = errorData[firstField];
-          if (Array.isArray(firstError)) {
-            throw new Error(`${firstField}: ${firstError[0]}`);
-          }
-          throw new Error(`${firstField}: ${firstError}`);
-        }
-        throw new Error(errorData.detail || errorData.message || 'Error en el registro');
-      }
-      throw new Error('Error de conexión');
-    }
-  }
-
-  // Grupos endpoints
-  async getGrupos() {
-    try {
-      const response = await this.client.get('cuentas/grupos/');
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.detail || error.message || 'Error al obtener grupos');
-    }
-  }
   async post(url, data) {
     try {
       const response = await this.client.post(url, data);
@@ -139,7 +93,6 @@ class ApiClient {
     } catch (error) {
       const errorData = error.response?.data;
       if (errorData) {
-        // Si hay errores de validación específicos
         if (typeof errorData === "object" && !errorData.detail) {
           const firstField = Object.keys(errorData)[0];
           const firstError = errorData[firstField];
@@ -148,9 +101,11 @@ class ApiClient {
           }
           throw new Error(`${firstField}: ${firstError}`);
         }
-        // Error general
         throw new Error(
-          errorData.detail || errorData.message || "Error en la petición"
+          errorData.detail ||
+            errorData.error ||
+            errorData.message ||
+            "Error en la petición"
         );
       }
       throw new Error("Error de conexión");
@@ -173,7 +128,10 @@ class ApiClient {
           throw new Error(`${firstField}: ${firstError}`);
         }
         throw new Error(
-          errorData.detail || errorData.message || "Error en la petición"
+          errorData.detail ||
+            errorData.error ||
+            errorData.message ||
+            "Error en la petición"
         );
       }
       throw new Error("Error de conexión");
@@ -196,7 +154,10 @@ class ApiClient {
           throw new Error(`${firstField}: ${firstError}`);
         }
         throw new Error(
-          errorData.detail || errorData.message || "Error en la petición"
+          errorData.detail ||
+            errorData.error ||
+            errorData.message ||
+            "Error en la petición"
         );
       }
       throw new Error("Error de conexión");
@@ -209,13 +170,12 @@ class ApiClient {
       return response.data;
     } catch (error) {
       throw new Error(
-        error.response?.data?.detail || error.message || "Error al eliminar"
+        error.response?.data?.detail ||
+          error.response?.data?.error ||
+          error.message ||
+          "Error al eliminar"
       );
     }
-  }
-
-  async createGrupo(data) {
-    return this.post("/cuentas/grupos/", data);
   }
 }
 
@@ -225,4 +185,3 @@ const apiClient = new ApiClient();
 // Exportar tanto la instancia como la clase
 export { apiClient as api };
 export default apiClient;
-

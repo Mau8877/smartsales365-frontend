@@ -1,83 +1,77 @@
-import apiClient from './apiClient';
-
-const SESSION_TIMEOUT = 60 * 60 * 1000;
+import apiClient from "./apiClient";
 
 class AuthService {
   constructor() {
     this.currentUser = null;
     this.loadUserFromStorage();
-    this.setupSessionTimeout();
   }
 
   loadUserFromStorage() {
-    const userData = localStorage.getItem('userData');
-    const sessionTime = localStorage.getItem('sessionTime');
-    if (userData && sessionTime) {
-      const now = Date.now();
-      if (now - parseInt(sessionTime, 10) < SESSION_TIMEOUT) {
-        this.currentUser = JSON.parse(userData);
-      } else {
-        this.clearUserFromStorage();
-      }
+    const userData = localStorage.getItem("userData");
+    if (userData) {
+      this.currentUser = JSON.parse(userData);
     }
   }
 
   saveUserToStorage(userData) {
-    localStorage.setItem('userData', JSON.stringify(userData));
-    localStorage.setItem('token', userData.token);
-    localStorage.setItem('sessionTime', Date.now().toString());
+    localStorage.setItem("userData", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token);
     this.currentUser = userData;
   }
 
   clearUserFromStorage() {
-    localStorage.removeItem('userData');
-    localStorage.removeItem('token');
-    localStorage.removeItem('sessionTime');
+    localStorage.removeItem("userData");
+    localStorage.removeItem("token");
     this.currentUser = null;
   }
 
-  async login(correo, password) {
-    const response = await apiClient.login(correo, password);
+  async login(email, password) {
+    const response = await apiClient.login(email, password);
     const userData = {
-      usuario_id: response.usuario_id,
+      user_id: response.user_id,
       token: response.token,
       rol: response.rol,
-      grupo_id: response.grupo_id,
-      grupo_nombre: response.grupo_nombre,
-      puede_acceder: response.puede_acceder,
-      correo: correo
+      tienda_id: response.tienda_id,
+      nombre_completo: response.nombre_completo,
+      email: email,
     };
     this.saveUserToStorage(userData);
     return userData;
   }
 
-  logout() {
-    apiClient.logout();
-    window.location.href = '/'; 
+  async logout() {
+    await apiClient.logout();
+    this.clearUserFromStorage();
+    window.location.href = "/login";
   }
 
   isAuthenticated() {
-    return !!this.currentUser && !!localStorage.getItem('token');
+    return !!this.currentUser && !!localStorage.getItem("token");
   }
 
+  // ========== ROLES & PERMISSIONS ==========
   isSuperAdmin() {
-    return this.currentUser?.rol === 'superAdmin';
+    return this.currentUser?.rol === "superAdmin";
   }
 
   isAdmin() {
-    return this.currentUser?.rol === 'administrador';
+    return this.currentUser?.rol === "admin";
   }
 
-  isMedico() {
-    return this.currentUser?.rol === 'medico';
+  isVendedor() {
+    return this.currentUser?.rol === "vendedor";
+  }
+
+  isCliente() {
+    return this.currentUser?.rol === "cliente";
   }
 
   canAccessSystem() {
     const user = this.getCurrentUser();
     // El superAdmin siempre puede acceder
-    if (user?.rol === 'superAdmin') return true;
-    // Otros roles dependen de puede_acceder
-    return user?.puede_acceder === true;
+    if (user?.rol === "superAdmin") return true;
+    // Otros roles dependen de que estén activos
+    return this.isAuthenticated() && user?.rol;
   }
 
   getCurrentUser() {
@@ -85,14 +79,19 @@ class AuthService {
   }
 
   getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
+  // ========== PERMISSION METHODS ==========
   canManageUsers() {
     return this.isSuperAdmin() || this.isAdmin();
   }
 
-  canManageGroups() {
+  canManageTiendas() {
+    return this.isSuperAdmin();
+  }
+
+  canManageRoles() {
     return this.isSuperAdmin();
   }
 
@@ -101,20 +100,11 @@ class AuthService {
   }
 
   canManageInventory() {
-    return this.isSuperAdmin() || this.isAdmin();
+    return this.isSuperAdmin() || this.isAdmin() || this.isVendedor();
   }
 
-  // Expira sesión tras 1 hora
-  setupSessionTimeout() {
-    setInterval(() => {
-      const sessionTime = localStorage.getItem('sessionTime');
-      if (sessionTime) {
-        const now = Date.now();
-        if (now - parseInt(sessionTime, 10) >= SESSION_TIMEOUT) {
-          this.logout();
-        }
-      }
-    }, 60 * 1000); // Verifica cada minuto
+  belongsToTienda() {
+    return !!this.currentUser?.tienda_id;
   }
 }
 
