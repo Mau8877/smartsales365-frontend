@@ -1,9 +1,13 @@
 import apiClient from "./apiClient";
 
+let instance = null;
+
 class AuthService {
   constructor() {
+    if (instance) return instance;
     this.currentUser = null;
     this.loadUserFromStorage();
+    instance = this;
   }
 
   loadUserFromStorage() {
@@ -26,52 +30,27 @@ class AuthService {
   }
 
   async login(email, password) {
-    const response = await apiClient.login(email, password);
-    const userData = {
-      user_id: response.user_id,
-      token: response.token,
-      rol: response.rol,
-      tienda_id: response.tienda_id,
-      nombre_completo: response.nombre_completo,
-      email: email,
-    };
-    this.saveUserToStorage(userData);
-    return userData;
+    const responseData = await apiClient.login(email, password);
+    this.saveUserToStorage(responseData);
+    return responseData;
   }
 
   async logout() {
-    await apiClient.logout();
-    this.clearUserFromStorage();
-    window.location.href = "/login";
+    try {
+      await apiClient.logout();
+    } catch (error) {
+      console.error(
+        "Fallo en el logout del backend. La sesión local se limpiará de todas formas.",
+        error
+      );
+    } finally {
+      this.clearUserFromStorage();
+      window.location.href = "/saas-login";
+    }
   }
 
   isAuthenticated() {
-    return !!this.currentUser && !!localStorage.getItem("token");
-  }
-
-  // ========== ROLES & PERMISSIONS ==========
-  isSuperAdmin() {
-    return this.currentUser?.rol === "superAdmin";
-  }
-
-  isAdmin() {
-    return this.currentUser?.rol === "admin";
-  }
-
-  isVendedor() {
-    return this.currentUser?.rol === "vendedor";
-  }
-
-  isCliente() {
-    return this.currentUser?.rol === "cliente";
-  }
-
-  canAccessSystem() {
-    const user = this.getCurrentUser();
-    // El superAdmin siempre puede acceder
-    if (user?.rol === "superAdmin") return true;
-    // Otros roles dependen de que estén activos
-    return this.isAuthenticated() && user?.rol;
+    return !!this.currentUser?.token;
   }
 
   getCurrentUser() {
@@ -79,33 +58,23 @@ class AuthService {
   }
 
   getToken() {
-    return localStorage.getItem("token");
+    return this.currentUser?.token || null;
   }
 
-  // ========== PERMISSION METHODS ==========
-  canManageUsers() {
-    return this.isSuperAdmin() || this.isAdmin();
+  // ========== ROLES & PERMISSIONS ADAPTADOS ==========
+  isSuperAdmin() {
+    return this.currentUser?.rol === "superAdmin";
   }
-
-  canManageTiendas() {
-    return this.isSuperAdmin();
+  isAdmin() {
+    return this.currentUser?.rol === "admin";
   }
-
-  canManageRoles() {
-    return this.isSuperAdmin();
+  isVendedor() {
+    return this.currentUser?.rol === "vendedor";
   }
-
-  canViewReports() {
-    return this.isSuperAdmin() || this.isAdmin();
-  }
-
-  canManageInventory() {
-    return this.isSuperAdmin() || this.isAdmin() || this.isVendedor();
-  }
-
-  belongsToTienda() {
-    return !!this.currentUser?.tienda_id;
+  isCliente() {
+    return this.currentUser?.rol === "cliente";
   }
 }
 
-export default new AuthService();
+const authService = new AuthService();
+export default authService;

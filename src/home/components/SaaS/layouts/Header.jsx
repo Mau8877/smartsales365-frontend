@@ -22,6 +22,16 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  const handleLoginClick = () => {
+    navigate("/saas-login");
+    setIsMenuOpen(false);
+  };
+
+  const handleRegisterClick = () => {
+    navigate("/saas-register");
+    setIsMenuOpen(false);
+  };
+
   const handleSectionClick = (sectionId) => {
     setIsMenuOpen(false);
 
@@ -101,6 +111,7 @@ const Header = () => {
             {/* Botones */}
             <div className="flex items-center space-x-4 ml-4">
               <motion.button
+                onClick={handleLoginClick}
                 className="
                 text-white 
                 hover:text-blue-50 
@@ -121,6 +132,7 @@ const Header = () => {
                 Iniciar Sesión
               </motion.button>
               <motion.button
+                onClick={handleRegisterClick}
                 className="
                 bg-white 
                 text-blue-600
@@ -206,6 +218,7 @@ const Header = () => {
                 {/* Botones mobile */}
                 <div className="pt-4 border-t border-blue-500 space-y-3">
                   <motion.button
+                    onClick={handleLoginClick}
                     className="
                       w-full 
                       text-white 
@@ -219,11 +232,11 @@ const Header = () => {
                     "
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Iniciar Sesión
                   </motion.button>
                   <motion.button
+                    onClick={handleRegisterClick}
                     className="
                       w-full 
                       bg-white 
@@ -239,7 +252,6 @@ const Header = () => {
                     "
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Registrar Tienda
                   </motion.button>

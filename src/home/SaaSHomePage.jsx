@@ -10,7 +10,6 @@ const SaaSHomePage = () => {
   return (
     <div className="min-h-screen">
       <Header />
-
       <main>
         <HeroSection />
         <FeaturesSection />
@@ -18,7 +17,6 @@ const SaaSHomePage = () => {
         <PricingSection />
         <AboutSection />
       </main>
-
       <Footer />
     </div>
   );

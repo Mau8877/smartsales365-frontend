@@ -1,10 +1,10 @@
-import { Navigate } from 'react-router-dom';
-import authService from '../services/auth';
+import { Navigate } from "react-router-dom";
+import authService from "../services/auth";
 
 const PublicRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
 
-  if (isAuthenticated && authService.canAccessSystem()) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
