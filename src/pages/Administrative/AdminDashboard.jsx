@@ -6,6 +6,17 @@ import { motion } from "framer-motion";
 const AdminDashboard = () => {
   const currentUser = authService.getCurrentUser();
 
+  // Función helper para obtener el nombre del rol de forma segura
+  const getSafeRolNombre = () => {
+    if (!currentUser?.rol) return "Usuario";
+    
+    if (typeof currentUser.rol === 'object') {
+      return currentUser.rol.nombre;
+    }
+    
+    return currentUser.rol;
+  };
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -41,7 +52,9 @@ const AdminDashboard = () => {
           <p className="text-gray-600 truncate">Email: {currentUser?.email}</p>
           <p className="text-gray-600">
             Rol:{" "}
-            <span className="font-medium capitalize">{currentUser?.rol}</span>
+            <span className="font-medium capitalize">
+              {getSafeRolNombre()} {/* ✅ Usar la función segura */}
+            </span>
           </p>
         </motion.div>
 

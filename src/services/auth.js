@@ -13,20 +13,88 @@ class AuthService {
   loadUserFromStorage() {
     const userData = localStorage.getItem("userData");
     if (userData) {
-      this.currentUser = JSON.parse(userData);
+      try {
+        this.currentUser = JSON.parse(userData);
+      } catch (error) {
+        console.error("Error parsing userData from localStorage:", error);
+        this.clearUserFromStorage();
+      }
     }
   }
 
   saveUserToStorage(userData) {
-    localStorage.setItem("userData", JSON.stringify(userData));
+    // Limpiamos el objeto ANTES de guardarlo
+    const cleanUserData = this._cleanUserObject(userData);
+    localStorage.setItem("userData", JSON.stringify(cleanUserData));
     localStorage.setItem("token", userData.token);
-    this.currentUser = userData;
+    this.currentUser = cleanUserData;
   }
 
   clearUserFromStorage() {
     localStorage.removeItem("userData");
     localStorage.removeItem("token");
     this.currentUser = null;
+  }
+
+  // --- MÉTODO CRÍTICO: Limpiar el objeto usuario ---
+  _cleanUserObject(userData) {
+    if (!userData) return null;
+    
+    // Extraer solo el nombre del rol si es un objeto
+    const rolNombre = this._extractRolNombre(userData.rol);
+    
+    return {
+      id: userData.id || userData.user_id,
+      email: userData.email,
+      nombre_completo: userData.nombre_completo,
+      token: userData.token,
+      tienda_id: userData.tienda_id,
+      // ⚠️ IMPORTANTE: Guardar solo el nombre del rol, no el objeto completo
+      rol: rolNombre,
+      profile: userData.profile ? {
+        id: userData.profile.id,
+        nombre: userData.profile.nombre,
+        apellido: userData.profile.apellido,
+        foto_perfil: userData.profile.foto_perfil,
+        telefono: userData.profile.telefono,
+        direccion: userData.profile.direccion
+      } : null
+    };
+  }
+
+  // --- Extraer solo el nombre del rol ---
+  _extractRolNombre(rol) {
+    if (!rol) return null;
+    
+    if (typeof rol === 'object' && rol !== null) {
+      return rol.nombre; // ← Solo el nombre, no el objeto completo
+    }
+    
+    return rol;
+  }
+
+  updateLocalUser(freshUserData) {
+    if (!freshUserData) return this.currentUser;
+  
+    console.log("=== DEBUG AuthService ===");
+    console.log("freshUserData.rol:", freshUserData.rol);
+    
+    // Limpiar los datos nuevos
+    const cleanFreshData = this._cleanUserObject(freshUserData);
+    
+    console.log("cleanFreshData.rol:", cleanFreshData.rol);
+    
+    // Fusionar con los datos actuales
+    const mergedData = {
+      ...this.currentUser,
+      ...cleanFreshData,
+    };
+
+    // Actualizar localStorage y estado interno
+    localStorage.setItem("userData", JSON.stringify(mergedData));
+    this.currentUser = mergedData;
+    
+    return mergedData;
   }
 
   async login(email, password) {
@@ -50,7 +118,7 @@ class AuthService {
   }
 
   isAuthenticated() {
-    return !!this.currentUser?.token;
+    return !!localStorage.getItem("token");
   }
 
   getCurrentUser() {
@@ -58,21 +126,25 @@ class AuthService {
   }
 
   getToken() {
-    return this.currentUser?.token || null;
+    return localStorage.getItem("token");
   }
 
-  // ========== ROLES & PERMISSIONS ADAPTADOS ==========
+  _getRolNombre() {
+    if (!this.currentUser || !this.currentUser.rol) return null;
+    return this.currentUser.rol; // Ahora siempre será string
+  }
+
   isSuperAdmin() {
-    return this.currentUser?.rol === "superAdmin";
+    return this._getRolNombre() === "superAdmin";
   }
   isAdmin() {
-    return this.currentUser?.rol === "admin";
+    return this._getRolNombre() === "admin";
   }
   isVendedor() {
-    return this.currentUser?.rol === "vendedor";
+    return this._getRolNombre() === "vendedor";
   }
   isCliente() {
-    return this.currentUser?.rol === "cliente";
+    return this._getRolNombre() === "cliente";
   }
 }
 
