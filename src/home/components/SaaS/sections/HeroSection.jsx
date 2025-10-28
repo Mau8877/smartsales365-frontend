@@ -1,8 +1,29 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Container from "../layouts/Container";
 import AnimatedSection from "../../AnimatedSection";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
+  const handleComenzarGratis = () => {
+    navigate("/saas-register");
+  };
+
+  const handleVerPlanes = () => {
+    scrollToSection('pricing');
+  };
+
   return (
     <section className="min-h-screen flex items-start justify-center bg-white relative overflow-hidden">
       <Container>
@@ -44,6 +65,7 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {/* Botón Primario */}
               <button
+                onClick={handleComenzarGratis}
                 className="
                 bg-blue-600 
                 hover:bg-blue-700 
@@ -70,6 +92,7 @@ const HeroSection = () => {
 
               {/* Botón Secundario */}
               <button
+                onClick={handleVerPlanes}
                 className="
                 border-2 
                 border-gray-300 

@@ -3,9 +3,16 @@ import AnimatedSection from "../../AnimatedSection";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Star, Mail, Zap, Crown, Rocket } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState("monthly");
+  const navigate = useNavigate();
+
+  const handlePlanSelect = () => {
+    // Navegar simple a la página de registro
+    navigate("/saas-register");
+  };
 
   const plans = [
     {
@@ -244,8 +251,9 @@ const PricingSection = () => {
                   </ul>
                 </div>
 
-                {/* CTA Button con mismas animaciones que "Contactar Ventas" */}
+                {/* CTA Button - SIMPLIFICADO: solo navega a /saas-register */}
                 <motion.button
+                  onClick={handlePlanSelect}
                   className={`w-full ${plan.button} text-white py-4 rounded-xl font-semibold transition-all duration-200 mt-auto border-2 border-transparent`}
                   whileHover={{
                     scale: 1.05,
