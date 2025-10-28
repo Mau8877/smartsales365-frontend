@@ -18,6 +18,7 @@ import ProtectedRoute from "@/components/ProtectedRoute.jsx"; // Asegúrate de q
 // Paginas para administradores
 import AdminDashboard from "@/pages/Administrative/AdminDashboard.jsx";
 import AdministrativeLayout from "@/layouts/AdministrativeLayout.jsx";
+import EditProfile from "@/pages/Administrative/EditProfile.jsx";
 
 // Una página para rutas no encontradas
 import NotFoundPage from "@/components/NotFoundPage.jsx";
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <AdminDashboard />,
+      },
+      {
+        path:"profile",
+        element:<EditProfile />
       },
       // Aquí irán tus otras páginas, por ejemplo:
       // { path: "productos", element: <PaginaDeProductos /> },

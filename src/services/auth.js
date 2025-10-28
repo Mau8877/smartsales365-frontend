@@ -44,10 +44,13 @@ class AuthService {
     const rolNombre = this._extractRolNombre(userData.rol);
     
     return {
-      id: userData.id || userData.user_id,
+      // ✅ CORREGIDO: Capturar user_id y tienda_id correctamente
+      id: userData.id || userData.user_id || userData.id_usuario,
+      user_id: userData.user_id || userData.id_usuario, // Para compatibilidad
       email: userData.email,
       nombre_completo: userData.nombre_completo,
       token: userData.token,
+      // ✅ CORREGIDO: Asegurar que tienda_id se guarde
       tienda_id: userData.tienda_id,
       // ⚠️ IMPORTANTE: Guardar solo el nombre del rol, no el objeto completo
       rol: rolNombre,
@@ -75,14 +78,9 @@ class AuthService {
 
   updateLocalUser(freshUserData) {
     if (!freshUserData) return this.currentUser;
-  
-    console.log("=== DEBUG AuthService ===");
-    console.log("freshUserData.rol:", freshUserData.rol);
     
     // Limpiar los datos nuevos
     const cleanFreshData = this._cleanUserObject(freshUserData);
-    
-    console.log("cleanFreshData.rol:", cleanFreshData.rol);
     
     // Fusionar con los datos actuales
     const mergedData = {

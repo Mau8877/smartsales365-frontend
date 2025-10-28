@@ -8,6 +8,7 @@ const AdminDashboard = () => {
 
   // Función helper para obtener el nombre del rol de forma segura
   const getSafeRolNombre = () => {
+    
     if (!currentUser?.rol) return "Usuario";
     
     if (typeof currentUser.rol === 'object') {
@@ -16,6 +17,8 @@ const AdminDashboard = () => {
     
     return currentUser.rol;
   };
+
+  console.log('👤 userData:', localStorage.getItem('userData'));
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
