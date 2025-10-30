@@ -36,7 +36,7 @@ export const generateMenuItems = (currentUser) => {
       subItems: [
         {
           label: "Bitácora del Sistema",
-          path: "bitacora",
+          path: "bitacora/index",
           icon: <ClipboardList size={iconSize} />,
         },
       ],
@@ -123,13 +123,24 @@ export const generateMenuItems = (currentUser) => {
         {
           label: "Generar Predicción",
           path: "prediccion/generar",
-          // --- ¡CAMBIO 2! ---
-          icon: <Sparkles size={iconSize} />, // <-- Ícono de "tuerquita" reemplazado
+          icon: <Sparkles size={iconSize} />,
         },
       ],
     },
     
     // (SUPERADMIN)
+    // Paquete Gestion de Usuarios
+    gestionarUsuariosSuper: {
+      label: "Gestión de Usuarios",
+      icon: <Users size={iconSize} />,
+      subItems: [
+        {
+          label: "Gestionar Usuarios",
+          path: "usuarios/all",
+          icon: <UserCheck size={iconSize} />, 
+        },
+      ],
+    },
     // Paquete SaaS
     saas: {
       label: "SaaS",
@@ -138,18 +149,13 @@ export const generateMenuItems = (currentUser) => {
         {
           label: "Gestionar Planes de Suscripción",
           path: "saas/planes-suscripcion",
-          icon: <Settings size={iconSize} />, // <-- 'Settings' se mantiene aquí
+          icon: <Settings size={iconSize} />,
         },
         {
           label: "Registrar Tienda",
           path: "saas/registrar-tienda",
           icon: <Store size={iconSize} />,
-        },
-        {
-          label: "Realizar Pago de Suscripcion",
-          path: "saas/pago-suscripcion",
-          icon: <DollarSign size={iconSize} />, 
-        },
+        }, 
       ], 
     },
     
@@ -160,6 +166,7 @@ export const generateMenuItems = (currentUser) => {
   const baseMenu = { name: "Principal", items: [menuConfig.dashboard] };
   const auditoriaMenu = { name: "Seguridad", items: [menuConfig.auditoriaSeguridad] };
   const usuariosMenu = { name: "Usuarios", items: [menuConfig.gestionarUsuarios] };
+  const usuariosMenuSuper = { name: "Usuarios", items: [menuConfig.gestionarUsuariosSuper] };
   const comercialMenu = { name: "Comercial", items: [menuConfig.gestionComercial] };
   const ventasMenu = { name: "Ventas", items: [menuConfig.gestionarVentas] };
   const reportesMenu = { name: "Reportes", items: [menuConfig.reportes] };
@@ -172,7 +179,7 @@ export const generateMenuItems = (currentUser) => {
       return [
         baseMenu,
         auditoriaMenu,
-        usuariosMenu,
+        usuariosMenuSuper,
         saasMenu,
         reportesMenu,
       ];

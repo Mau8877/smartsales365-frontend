@@ -16,9 +16,22 @@ import PublicRoute from "@/components/PublicRoute.jsx"; // Asegúrate de que la 
 import ProtectedRoute from "@/components/ProtectedRoute.jsx"; // Asegúrate de que la ruta sea correcta
 
 // Paginas para administradores
-import AdminDashboard from "@/pages/Administrative/AdminDashboard.jsx";
+import AdminDashboard from "@/pages/Admin/AdminDashboard.jsx";
 import AdministrativeLayout from "@/layouts/AdministrativeLayout.jsx";
-import EditProfile from "@/pages/Administrative/EditProfile.jsx";
+import EditProfile from "@/pages/Admin/EditProfile.jsx";
+import GestionarUsuariosClientes from "@/pages/Admin/GestionarUsuariosClientes/index.jsx"
+import GestionarUsuariosTienda from "@/pages/Admin/GestionarUsuariosTienda/index.jsx"
+import Bitacora from "@/pages/Admin/Bitacora/index.jsx"
+import GestionarCategoriaProductos from "@/pages/Admin/GestionarCategoriaProductos/index.jsx"
+import GestionarProductos from "@/pages/Admin/GestionarProductos/index.jsx"
+import PagoProductos from "@/pages/Admin/PagoProductos/index.jsx"
+import GenerarNotaVenta from "@/pages/Admin/GenerarNotaVenta/index.jsx"
+import HistorialVentas from "@/pages/Admin/HistorialVentas/index.jsx"
+import GenerarReportes from "@/pages/Admin/GenerarReportes/index.jsx"
+import GenerarPrediccion from "@/pages/Admin/GenerarPrediccion/index.jsx"
+import GestionarUsuariosAll from "@/pages/Admin/GestionarUsuariosAll/index.jsx"
+import GestionarPlanesSuscripcion from "@/pages/Admin/GestionarPlanesSuscripcion/index.jsx"
+import RegistrarTienda from "@/pages/Admin/RegistrarTienda/index.jsx"
 
 // Una página para rutas no encontradas
 import NotFoundPage from "@/components/NotFoundPage.jsx";
@@ -77,9 +90,58 @@ const router = createBrowserRouter([
         path:"profile",
         element:<EditProfile />
       },
-      // Aquí irán tus otras páginas, por ejemplo:
-      // { path: "productos", element: <PaginaDeProductos /> },
-      // { path: "usuarios", element: <PaginaDeUsuarios /> },
+      {
+        path:"bitacora/index",
+        element:<Bitacora />
+      },
+      {
+        path:"usuarios/tienda",
+        element:<GestionarUsuariosTienda />
+      },
+      {
+        path:"usuarios/clientes",
+        element:<GestionarUsuariosClientes />
+      },
+      {
+        path:"comercial/categorias",
+        element:<GestionarCategoriaProductos />
+      },
+      {
+        path:"comercial/productos",
+        element:<GestionarProductos />
+      },
+      {
+        path:"ventas/productos",
+        element:<PagoProductos />
+      },
+      {
+        path:"ventas/nota-venta",
+        element:<GenerarNotaVenta />
+      },
+      {
+        path:"ventas/historial-ventas",
+        element:<HistorialVentas />
+      },
+      {
+        path:"reporte/generar",
+        element:<GenerarReportes />
+      },
+      {
+        path:"prediccion/generar",
+        element:<GenerarPrediccion />
+      },
+      {
+        path:"usuarios/all",
+        element:<GestionarUsuariosAll />
+      },
+      {
+        path:"saas/planes-suscripcion",
+        element:<GestionarPlanesSuscripcion />
+      },
+      {
+        path:"saas/registrar-tienda",
+        element:<RegistrarTienda />
+      },
     ],
   },
 
