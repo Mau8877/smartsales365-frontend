@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-// 1. IMPORTAMOS useLocation
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom"; // Se quitó useLocation
 import { LogOut, Menu, User } from "lucide-react";
 import authService from "@/services/auth";
 import apiClient from "@/services/apiClient";
 
 /**
  * Muestra el avatar del usuario.
+ * (Este componente estaba perfecto, no se toca)
  */
 const Avatar = ({ user }) => {
   const avatarUrl = user?.profile?.foto_perfil;
@@ -41,13 +41,14 @@ const Avatar = ({ user }) => {
   );
 };
 
-const Header = ({ toggleSidebar }) => {
+// --- CORRECCIÓN 1: El Header ahora acepta 'title' como prop ---
+const Header = ({ toggleSidebar, title }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const menuRef = useRef(null);
-  
-  // 2. OBTENEMOS LA UBICACIÓN ACTUAL
-  const location = useLocation();
+
+  // (Todo el código de useEffect, handleLogout, getRolNombre, getNombreCompleto
+  // es idéntico y se queda igual, ya que es lógica propia del Header)
 
   useEffect(() => {
     if (currentUser?.rol && typeof currentUser.rol === 'object') {
@@ -59,16 +60,12 @@ const Header = ({ toggleSidebar }) => {
     const fetchFullUserData = async () => {
       try {
         const fullUserData = await apiClient.getMe();
-        
         const mergedUserData = authService.updateLocalUser(fullUserData);
-        
         setCurrentUser(mergedUserData);
-
       } catch (error) {
         console.error("Error al refrescar datos del usuario:", error);
       }
     };
-
     fetchFullUserData();
   }, []); 
 
@@ -107,33 +104,10 @@ const Header = ({ toggleSidebar }) => {
     }
     return currentUser?.nombre_completo || "Usuario";
   };
-
-  // 3. REEMPLAZAMOS LA FUNCIÓN getTitle
-  const getTitle = () => {
-    const path = location.pathname;
-
-    // Mapea rutas a títulos
-    const titles = {
-      "/dashboard": "Dashboard",
-      "/dashboard/profile": "Editar Perfil",
-    };
-
-    // Revisa coincidencias exactas
-    if (titles[path]) {
-      return titles[path];
-    }
-
-    // Revisa coincidencias parciales (ej. /dashboard/usuarios/1)
-    if (path.startsWith("/dashboard/profile")) return "Editar Perfil";
-    if (path.startsWith("/dashboard/usuarios")) return "Gestión de Usuarios";
-    if (path.startsWith("/dashboard/productos")) return "Gestión de Productos";
-
-    // Título por defecto
-    return "Dashboard";
-  };
+  
+  // --- CORRECCIÓN 2: Se eliminó 'useLocation' y toda la función 'getTitle()' ---
 
   return (
-    // Esta línea se mantiene como la ajustamos antes
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-40">
       {/* Sección Izquierda: Menú móvil y Título */}
       <div className="flex items-center gap-4">
@@ -144,12 +118,12 @@ const Header = ({ toggleSidebar }) => {
           <Menu size={24} />
         </button>
         <h1 className="text-xl font-semibold text-gray-800 hidden sm:block">
-          {/* 4. AHORA EL TÍTULO ES DINÁMICO */}
-          {getTitle()}
+          {/* --- CORRECCIÓN 3: Se usa la prop 'title' --- */}
+          {title}
         </h1>
       </div>
 
-      {/* Sección Derecha: Información y Menú de Perfil */}
+      {/* Sección Derecha: Información y Menú de Perfil (Sin cambios) */}
       <div className="flex items-center gap-4">
         <div>
           <div className="font-semibold text-right text-gray-800">
@@ -169,7 +143,7 @@ const Header = ({ toggleSidebar }) => {
             <Avatar user={currentUser} />
           </button>
 
-          {/* Contenido del Menú Desplegable */}
+          {/* Contenido del Menú Desplegable (Sin cambios) */}
           {isMenuOpen && (
             <div
               ref={menuRef} 
@@ -183,7 +157,7 @@ const Header = ({ toggleSidebar }) => {
                   <p className="text-sm text-gray-500 truncate">
                     {currentUser?.email || "No email"}
                   </p>
-                </div>                
+                </div>
                   <Link
                     to="/dashboard/profile"
                     onClick={() => setIsMenuOpen(false)}
