@@ -95,9 +95,7 @@ const Sidebar = ({ menuItems, isOpen, toggleSidebar }) => (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          // --- ¡CAMBIO AQUÍ! ---
-          // Añadido 'backdrop-blur-sm' y reducido 'bg-opacity-50' a 'bg-opacity-25'
-          className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm z-20 lg:hidden"
+          className="fixed inset-0 bg-white/10 backdrop-blur-[3px] z-20 lg:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
