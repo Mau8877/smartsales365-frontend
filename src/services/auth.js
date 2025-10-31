@@ -44,15 +44,12 @@ class AuthService {
     const rolNombre = this._extractRolNombre(userData.rol);
     
     return {
-      // ✅ CORREGIDO: Capturar user_id y tienda_id correctamente
       id: userData.id || userData.user_id || userData.id_usuario,
-      user_id: userData.user_id || userData.id_usuario, // Para compatibilidad
+      user_id: userData.user_id || userData.id_usuario,
       email: userData.email,
       nombre_completo: userData.nombre_completo,
       token: userData.token,
-      // ✅ CORREGIDO: Asegurar que tienda_id se guarde
-      tienda_id: userData.tienda_id,
-      // ⚠️ IMPORTANTE: Guardar solo el nombre del rol, no el objeto completo
+      tienda_id: userData.tienda_id || userData.tienda?.id || this._extractTiendaId(userData),
       rol: rolNombre,
       profile: userData.profile ? {
         id: userData.profile.id,
@@ -63,6 +60,14 @@ class AuthService {
         direccion: userData.profile.direccion
       } : null
     };
+  }
+
+  // --- Nuevo método para extraer tienda_id de diferentes estructuras ---
+  _extractTiendaId(userData) {
+    if (userData.tienda_id) return userData.tienda_id;
+    if (userData.tienda && userData.tienda.id) return userData.tienda.id;
+    if (userData.user_tienda) return userData.user_tienda.id;
+    return null;
   }
 
   // --- Extraer solo el nombre del rol ---

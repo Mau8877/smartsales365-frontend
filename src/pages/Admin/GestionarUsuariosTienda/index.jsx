@@ -1,50 +1,102 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Users } from 'lucide-react'; // Re-usamos el ícono del menú
+import React, { useState, useEffect } from "react"; // <-- Simplificamos los imports
+import UniversalTable from "@/components/UniversalTable";
+import StatusPill from "@/components/StatusPill"; // <-- 1. Importamos el Pill
+// import StatusToggle from "@/components/StatusToggle"; // <-- 2. Eliminamos el Toggle
+import apiClient from "@/services/apiClient"; 
 
 const GestionarUsuariosTienda = () => {
-  // Variantes de animación consistentes con el Dashboard
-  const pageVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // --- 3. ELIMINAMOS handleToggleStatus ---
+  // (Toda la función 'handleToggleStatus' ha sido borrada)
+
+  // --- 4. Definimos las columnas (ahora más simples) ---
+  const columns = [
+    {
+      header: "Nombre",
+      accessor: "nombre_completo",
+    },
+    {
+      header: "Email",
+      accessor: "email",
+    },
+    {
+      header: "Rol",
+      accessor: "rol_nombre",
+    },
+    {
+      header: "Estado",
+      accessor: "estado_texto", // El buscador usa esto
+      render: (item) => (
+        // Usamos el nuevo Pill.
+        // Le pasamos el texto ("Activo" o "Desactivado")
+        // y el 'type' (para que sepa si es verde o rojo)
+        <StatusPill
+          text={item.estado_texto}
+          type={item.is_active ? 'active' : 'inactive'}
+        />
+      ),
+    },
+  ];
+
+  // Cargar los datos
+  useEffect(() => {
+    const fetchUsers = async () => {
+      console.log(localStorage.getItem('userData'));
+      setLoading(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const apiData = [
+          { id: 1, nombre_completo: "Carlos Leonel", email: "leonel@tienda.com", rol_nombre: "Admin", is_active: true },
+          { id: 2, nombre_completo: "Mauro", email: "mauro@tienda.com", rol_nombre: "Vendedor", is_active: true },
+          { id: 3, nombre_completo: "María", email: "maria@tienda.com", rol_nombre: "Vendedor", is_active: false },
+        ];
+
+        // --- 5. MANTENEMOS ESTA LÓGICA ---
+        // Seguimos usando "Desactivado" para que el buscador funcione.
+        const processedData = apiData.map(user => ({
+          ...user,
+          estado_texto: user.is_active ? "Activo" : "Desactivado"
+        }));
+        
+        setData(processedData);
+
+      } catch (error) {
+        console.error("Error al cargar usuarios:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []); // El array vacío [] está perfecto
+
+  // Funciones para los botones (sin cambios)
+  const handleAdd = () => {
+    console.log("Abrir modal para AGREGAR usuario");
+  };
+
+  const handleEdit = (user) => {
+    console.log("Abrir modal para EDITAR usuario:", user);
+  };
+
+  const handleDelete = (user) => {
+    console.log("Abrir modal para ELIMINAR usuario:", user);
   };
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
-      {/* Usamos una tarjeta blanca similar a las del Dashboard
-        para mantener la consistencia visual.
-      */}
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        
-        {/* Un pequeño encabezado para la página */}
-        <div className="flex items-center gap-3 mb-4 border-b pb-4">
-          <Users className="text-blue-700" size={28} />
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Módulo: Gestionar Usuarios de Tienda
-          </h2>
-        </div>
-
-        <p className="text-gray-600">
-          Hola! Esta es la página para la gestión de usuarios (Administradores y Vendedores).
-        </p>
-
-        {/* Un 'placeholder' para el contenido futuro */}
-        <div className="mt-6 p-6 bg-gray-50 rounded-lg border text-center">
-          <h3 className="text-lg font-semibold text-gray-700">
-            Próximamente: Tabla de Usuarios
-          </h3>
-          <p className="text-gray-500 mt-2">
-            Aquí es donde construirás la tabla para ver, crear, editar y eliminar usuarios.
-          </p>
-        </div>
-
-      </div>
-    </motion.div>
+    <UniversalTable
+      title="Gestión de Usuarios de Tienda"
+      data={data}
+      columns={columns}
+      loading={loading}
+      onAdd={handleAdd}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      searchPlaceholder="Buscar por nombre, email, rol, estado..."
+      addButtonText="Agregar Usuario"
+      emptyMessage="No se encontraron usuarios"
+    />
   );
 };
 
