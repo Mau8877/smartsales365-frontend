@@ -1,88 +1,112 @@
-import React, { useState, useEffect } from "react"; // <-- Simplificamos los imports
-import UniversalTable from "@/components/UniversalTable";
-import StatusPill from "@/components/StatusPill"; // <-- 1. Importamos el Pill
-// import StatusToggle from "@/components/StatusToggle"; // <-- 2. Eliminamos el Toggle
-import apiClient from "@/services/apiClient"; 
+import React, { useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import UniversalTable from '@/components/UniversalTable';
+import StatusPill from '@/components/StatusPill'; // Reutilizamos el pill
+import { useServerSideTable } from '@/hooks/useServerSideTable'; // ¡Nuestra magia!
+import apiClient from '@/services/apiClient';
+
+// Celda de renderizado para el usuario (Nombre + Rol)
+const UserCell = ({ item }) => (
+  <div>
+    <div className="font-medium text-gray-900">
+      {item.profile?.nombre || 'Sin'} {item.profile?.apellido || 'Nombre'}
+    </div>
+    <div className="text-sm text-gray-500 capitalize">
+      {item.rol?.nombre || "Sin Rol"}
+    </div>
+  </div>
+);
 
 const GestionarUsuariosTienda = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // --- 3. ELIMINAMOS handleToggleStatus ---
-  // (Toda la función 'handleToggleStatus' ha sido borrada)
+  // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+  // 1. Usamos el hook
+  // 2. Le pasamos un 'fixedQueryFilters' para que SIEMPRE filtre
+  //    por Admin y Vendedor en esta vista.
+  const { 
+    data: rawData,
+    loading, 
+    error, 
+    pagination, 
+    orderingState,
+    handlePageChange, 
+    handleSearchSubmit,
+    handleSort,
+    refreshData // <-- ¡Función para recargar!
+  } = useServerSideTable(
+    '/usuarios/users/', // Endpoint del UserViewSet
+    { 'rol__nombre__in': 'admin,vendedor' } // ¡Filtro fijo!
+  );
+  
+  // Procesamos los datos para la búsqueda (igual que en Bitácora)
+  const data = useMemo(() => {
+    return rawData.map(user => ({
+      ...user,
+      nombre_completo: `${user.profile?.nombre || ''} ${user.profile?.apellido || ''}`.trim(),
+      rol_nombre: user.rol?.nombre,
+      estado_texto: user.is_active ? "Activo" : "Desactivado"
+    }));
+  }, [rawData]);
 
-  // --- 4. Definimos las columnas (ahora más simples) ---
-  const columns = [
-    {
-      header: "Nombre",
-      accessor: "nombre_completo",
+  // --- Definición de Columnas ---
+  const columns = useMemo(() => [
+    { 
+      header: "Nombre", 
+      accessor: "nombre_completo", 
+      render: (item) => <UserCell item={item} />,
+      sortKey: "profile__apellido"
     },
-    {
-      header: "Email",
+    { 
+      header: "Email", 
       accessor: "email",
+      sortKey: "email"
     },
-    {
-      header: "Rol",
-      accessor: "rol_nombre",
-    },
-    {
-      header: "Estado",
-      accessor: "estado_texto", // El buscador usa esto
+    { 
+      header: "Estado", 
+      accessor: "estado_texto",
       render: (item) => (
-        // Usamos el nuevo Pill.
-        // Le pasamos el texto ("Activo" o "Desactivado")
-        // y el 'type' (para que sepa si es verde o rojo)
         <StatusPill
           text={item.estado_texto}
           type={item.is_active ? 'active' : 'inactive'}
         />
       ),
+      // 'is_active' no está en 'ordering_fields', así que no hay sortKey
     },
-  ];
+  ], []);
 
-  // Cargar los datos
-  useEffect(() => {
-    const fetchUsers = async () => {
-      console.log(localStorage.getItem('userData'));
-      setLoading(true);
-      try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        const apiData = [
-          { id: 1, nombre_completo: "Carlos Leonel", email: "leonel@tienda.com", rol_nombre: "Admin", is_active: true },
-          { id: 2, nombre_completo: "Mauro", email: "mauro@tienda.com", rol_nombre: "Vendedor", is_active: true },
-          { id: 3, nombre_completo: "María", email: "maria@tienda.com", rol_nombre: "Vendedor", is_active: false },
-        ];
-
-        // --- 5. MANTENEMOS ESTA LÓGICA ---
-        // Seguimos usando "Desactivado" para que el buscador funcione.
-        const processedData = apiData.map(user => ({
-          ...user,
-          estado_texto: user.is_active ? "Activo" : "Desactivado"
-        }));
-        
-        setData(processedData);
-
-      } catch (error) {
-        console.error("Error al cargar usuarios:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []); // El array vacío [] está perfecto
-
-  // Funciones para los botones (sin cambios)
+  // --- Handlers para CRUD ---
   const handleAdd = () => {
-    console.log("Abrir modal para AGREGAR usuario");
+    navigate('/dashboard/usuarios/tienda/nuevo');
   };
 
   const handleEdit = (user) => {
-    console.log("Abrir modal para EDITAR usuario:", user);
+    navigate(`/dashboard/usuarios/tienda/${user.id_usuario}`);
   };
 
-  const handleDelete = (user) => {
-    console.log("Abrir modal para ELIMINAR usuario:", user);
+  const handleDelete = async (user) => {
+    if (window.confirm(`¿Estás seguro que quieres eliminar a ${user.nombre_completo || user.email}?`)) {
+      try {
+        await apiClient.delete(`/usuarios/users/${user.id_usuario}/`);
+        refreshData(); // ¡Recarga la tabla!
+      } catch (error) {
+        console.error("Error al eliminar usuario:", error);
+        alert("Error al eliminar usuario: " + (error.detail || error.message));
+      }
+    }
   };
+
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+        <h2 className="text-xl font-bold text-red-600">Error de Carga</h2>
+        <p className="text-gray-700 mt-2">No se pudieron cargar los usuarios.</p>
+        <pre className="bg-gray-100 p-4 rounded-md mt-4 text-red-800 overflow-auto">
+          {error}
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <UniversalTable
@@ -90,11 +114,23 @@ const GestionarUsuariosTienda = () => {
       data={data}
       columns={columns}
       loading={loading}
+      
+      // Búsqueda y Paginación (Modo Servidor)
+      searchMode="manual"
+      onSearchSubmit={handleSearchSubmit}
+      pagination={pagination}
+      onPageChange={handlePageChange}
+      onSort={handleSort}
+      orderingState={orderingState}
+      
+      // Acciones CRUD
+      showAddButton={true}
+      addButtonText="Agregar Usuario"
       onAdd={handleAdd}
       onEdit={handleEdit}
       onDelete={handleDelete}
-      searchPlaceholder="Buscar por nombre, email, rol, estado..."
-      addButtonText="Agregar Usuario"
+      
+      searchPlaceholder="Buscar por nombre, email..."
       emptyMessage="No se encontraron usuarios"
     />
   );

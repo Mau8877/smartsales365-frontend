@@ -20,7 +20,11 @@ import AdminDashboard from "@/pages/Admin/AdminDashboard.jsx";
 import AdministrativeLayout from "@/layouts/AdministrativeLayout.jsx";
 import EditProfile from "@/pages/Admin/EditProfile.jsx";
 import GestionarUsuariosClientes from "@/pages/Admin/GestionarUsuariosClientes/index.jsx"
+
 import GestionarUsuariosTienda from "@/pages/Admin/GestionarUsuariosTienda/index.jsx"
+import CrearUsuarioTienda from "@/pages/Admin/GestionarUsuariosTienda/create.jsx"
+import EditarUsuarioTienda from "@/pages/Admin/GestionarUsuariosTienda/edit.jsx"
+
 import Bitacora from "@/pages/Admin/Bitacora/index.jsx"
 import GestionarCategoriaProductos from "@/pages/Admin/GestionarCategoriaProductos/index.jsx"
 import GestionarProductos from "@/pages/Admin/GestionarProductos/index.jsx"
@@ -95,8 +99,23 @@ const router = createBrowserRouter([
         element:<Bitacora />
       },
       {
-        path:"usuarios/tienda",
-        element:<GestionarUsuariosTienda />
+        path: "usuarios/tienda",
+        // (Opcional: aquí podrías poner un Layout anidado si quisieras)
+        // element: <UsuariosTiendaLayout />, 
+        children: [
+          {
+            index: true, // <-- /dashboard/usuarios/tienda
+            element: <GestionarUsuariosTienda />,
+          },
+          {
+            path: "nuevo", // <-- /dashboard/usuarios/tienda/nuevo
+            element: <CrearUsuarioTienda />,
+          },
+          {
+            path: ":id", // <-- /dashboard/usuarios/tienda/1
+            element: <EditarUsuarioTienda />,
+          },
+        ]
       },
       {
         path:"usuarios/clientes",
