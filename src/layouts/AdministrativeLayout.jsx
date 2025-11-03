@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import authService from "@/services/auth";
-import { generateMenuItems } from "@/pages/Admin/menuItems.jsx";
+import { generateMenuItems } from "@/pages/Admin/menuItems.jsx"; // (Tu ruta)
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import { useIdleTimer } from "@/hooks/useIdleTimer"; // <-- ¡AÑADIDO!
 
 /**
  * Aplana la estructura de menú (grupos -> items -> subItems)
@@ -55,18 +56,24 @@ const AdministrativeLayout = () => {
   const allLinks = flattenMenuItems(menuItems);
   const currentTitle = getTitleForPath(location.pathname, allLinks);
 
+  const handleIdle = () => {
+    console.warn("Sesión cerrada por inactividad de 15 minutos.");
+    authService.logout(); 
+  };
+
+  useIdleTimer(handleIdle, 840000); 
+  
+
   const toggleSidebar = () => setSidebarOpen((open) => !open);
 
   return (
-    <div className="relative min-h-screen lg:flex">
+    <div className="relative min-h-screen lg:flex bg-gray-50">
       <Sidebar
         menuItems={menuItems}
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
       />
 
-      {/* --- ¡CORRECCIÓN DE FONDO! --- */}
-      {/* Añadido 'bg-gray-50' para unificar el fondo y eliminar el gap blanco */}
       <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out lg:ml-72 bg-gray-50">
         <Header 
           toggleSidebar={toggleSidebar} 

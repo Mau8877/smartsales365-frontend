@@ -20,29 +20,58 @@ const EditarUsuarioTienda = () => {
 
   useEffect(() => {
     setLoading(true);
+    let userData;
+    let rolesData;
 
-    Promise.all([
-      apiClient.get(`/usuarios/users/${id}/`),
-      apiClient.get("/usuarios/roles/")
-    ])
-    .then(([userData, rolesData]) => {
-      setInitialData({
-        email: userData.email,
-        rol: userData.rol?.id,
-        nombre: userData.profile?.nombre || "",
-        apellido: userData.profile?.apellido || "",
-        telefono: userData.profile?.telefono || "",
-        direccion: userData.profile?.direccion || "",
-      });
+    // 1. Empezamos pidiendo los roles
+    apiClient.get("/usuarios/roles/")
+      .then(rolesRes => {
+        rolesData = rolesRes || [];
+        
+        // 2. Luego, pedimos los datos base del usuario
+        return apiClient.get(`/usuarios/users/${id}/`);
+      })
+      .then(userRes => {
+        userData = userRes;
+        const rolNombre = userData.rol?.nombre;
 
-      const allRoles = rolesData || [];
+        // 3. Basado en el rol, pedimos el perfil específico
+        if (rolNombre === 'vendedor') {
+          return apiClient.get(`/usuarios/vendedores/${id}/`);
+        } else if (rolNombre === 'admin') {
+          return apiClient.get(`/usuarios/administradores/${id}/`);
+        }
+        // Si es cliente o no tiene rol, no necesitamos más datos
+        return Promise.resolve(null);
+      })
+      .then(specificProfileData => {
+        // 4. Filtramos los roles (igual que antes)
+        if (currentUser.rol === 'superAdmin') {
+          setRoles(rolesData);
+        } else {
+          setRoles(rolesData.filter(r => r.nombre === 'vendedor'));
+        }
 
-      if (currentUser.rol === 'superAdmin') {
-         setRoles(allRoles);
-      } else {
-         setRoles(allRoles.filter(r => r.nombre === 'vendedor'));
-      }
-    })
+        // 5. Fusionamos TODOS los datos en initialData
+        setInitialData({
+          email: userData.email,
+          rol: userData.rol?.id,
+          nombre: userData.profile?.nombre || "",
+          apellido: userData.profile?.apellido || "",
+          telefono: userData.profile?.telefono || "",
+          direccion: userData.profile?.direccion || "",
+          is_active: userData.is_active, 
+          // --- ¡DATOS FUSIONADOS! ---
+          vendedor_profile: {
+            tasa_comision: specificProfileData?.tasa_comision || "0.00",
+            fecha_contratacion: specificProfileData?.fecha_contratacion || null,
+          },
+          admin_profile: {
+            departamento: specificProfileData?.departamento || "",
+            fecha_contratacion: specificProfileData?.fecha_contratacion || null,
+          }
+        });
+      })
     .catch((e) => setError("Error al cargar datos: " + (e.detail || e.message)))
     .finally(() => setLoading(false));
   }, [id, currentUser.rol]);
@@ -55,7 +84,10 @@ const EditarUsuarioTienda = () => {
       navigate("/dashboard/usuarios/tienda");
     } catch (e) {
       console.error(e);
-      const errorMsg = Object.values(e).flat().join('; ');
+      // Mejoramos la visualización de errores de DRF
+      const errorMsg = (typeof e === 'object' && e !== null)
+        ? Object.entries(e).map(([key, value]) => `${key}: ${value.flat().join(' ')}`).join('; ')
+        : "Error al actualizar el usuario.";
       setError(errorMsg || "Error al actualizar el usuario.");
     } finally {
       setSaving(false);
@@ -77,7 +109,7 @@ const EditarUsuarioTienda = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Header con botón de volver */}
+      {/* Header */}
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate(-1)}
@@ -87,8 +119,8 @@ const EditarUsuarioTienda = () => {
           <span className="hidden sm:inline">Volver a Usuarios</span>
         </button>
       </div>
-
-      {/* Alerta de Error */}
+      
+      {/* Error */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
           <AlertCircle className="text-red-600 flex-shrink-0" size={20} />

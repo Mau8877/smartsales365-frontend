@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Loader } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react"; // <-- 1. useMemo añadido
+import { Loader, Eye, EyeOff } from "lucide-react";
+import StatusToggle from "@/components/StatusToggle";
 
-// Componente helper 'Field' (copiado de tu ejemplo)
 const Field = ({ label, error, children }) => (
   <div className="space-y-2">
     <label className="block text-sm font-semibold text-gray-700">{label}</label>
@@ -31,8 +31,18 @@ const UsuarioTiendaForm = ({
     apellido: "",
     telefono: "",
     direccion: "",
+    is_active: true,
+    vendedor_profile: {
+      tasa_comision: "0.00",
+      fecha_contratacion: null,
+    },
+    admin_profile: {
+      departamento: "",
+      fecha_contratacion: null,
+    }
   });
   const [touched, setTouched] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isEditMode && initialData) {
@@ -44,9 +54,31 @@ const UsuarioTiendaForm = ({
         apellido: initialData.apellido || "",
         telefono: initialData.telefono || "",
         direccion: initialData.direccion || "",
+        is_active: initialData.is_active,
+        vendedor_profile: {
+          tasa_comision: initialData.vendedor_profile?.tasa_comision || "0.00",
+          fecha_contratacion: initialData.vendedor_profile?.fecha_contratacion || null,
+        },
+        admin_profile: {
+          departamento: initialData.admin_profile?.departamento || "",
+          fecha_contratacion: initialData.admin_profile?.fecha_contratacion || null,
+        }
+      });
+    } else {
+      setForm({
+        email: "", password: "", rol: "", nombre: "", apellido: "",
+        telefono: "", direccion: "", is_active: true,
+        vendedor_profile: { tasa_comision: "0.00", fecha_contratacion: null },
+        admin_profile: { departamento: "", fecha_contratacion: null }
       });
     }
   }, [initialData, isEditMode]);
+
+  const selectedRolNombre = useMemo(() => {
+    if (!form.rol) return null;
+    const rolObj = rolesOptions.find(r => r.id === parseInt(form.rol, 10));
+    return rolObj ? rolObj.nombre : null;
+  }, [form.rol, rolesOptions]);
 
   const setField = (name, value) => {
     setForm((f) => ({ ...f, [name]: value }));
@@ -66,10 +98,9 @@ const UsuarioTiendaForm = ({
     });
 
     if (!form.email || !form.nombre || !form.rol || (!isEditMode && !form.password)) {
-      return; // No enviar si faltan campos requeridos
+      return;
     }
-
-    // Preparamos el payload para la API
+    
     const payload = {
       email: form.email,
       rol_id: form.rol,
@@ -78,18 +109,25 @@ const UsuarioTiendaForm = ({
         apellido: form.apellido,
         telefono: form.telefono,
         direccion: form.direccion,
-      }
+      },
+      vendedor_profile: selectedRolNombre === 'vendedor' ? form.vendedor_profile : null,
+      admin_profile: selectedRolNombre === 'admin' ? form.admin_profile : null,
     };
 
-    // Solo enviamos la contraseña si es modo CREAR y tiene valor
-    if (!isEditMode && form.password) {
-      payload.password = form.password;
+    if (!isEditMode) {
+      if (form.password) {
+        payload.password = form.password;
+      }
+      payload.is_active = form.is_active; 
+    }
+    
+    if (isEditMode && initialData && !initialData.is_active && form.is_active) {
+      payload.is_active = true; 
     }
     
     onSubmit(payload);
   };
 
-  // Lógica de Validación
   const invalid = {
     email: touched.email && !form.email,
     nombre: touched.nombre && !form.nombre,
@@ -99,7 +137,27 @@ const UsuarioTiendaForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Fila 1: Nombre, Apellido, Rol */}
+      {isEditMode && initialData?.is_active === false && (
+        <Field label="Estado del Usuario">
+          <div className="flex items-center gap-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <StatusToggle
+              isActive={form.is_active}
+              onToggle={() => setField("is_active", !form.is_active)} 
+            />
+            <div>
+              <p className="font-medium text-gray-800">
+                {form.is_active ? "Activo" : "Desactivado"}
+              </p>
+              <p className="text-sm text-gray-600">
+                {form.is_active
+                  ? "El usuario será reactivado al guardar."
+                  : "El usuario permanecerá desactivado."}
+              </p>
+            </div>
+          </div>
+        </Field>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Field label="Nombre *" error={invalid.nombre && "Nombre es requerido"}>
           <input
@@ -125,18 +183,17 @@ const UsuarioTiendaForm = ({
             value={form.rol}
             onChange={(e) => setField("rol", e.target.value)}
             onBlur={() => handleBlur("rol")}
-            disabled={loading || rolesOptions.length === 0}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 ${invalid.rol ? "border-red-500 ring-red-200" : "border-gray-300 focus:ring-blue-700"}`}
+            disabled={loading || rolesOptions.length === 0 || isEditMode} 
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 ${invalid.rol ? "border-red-500 ring-red-200" : "border-gray-300 focus:ring-blue-700"} ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
           >
             <option value="" disabled>Seleccione un rol...</option>
             {rolesOptions.map((rol) => (
               <option key={rol.id} value={rol.id} className="capitalize">{rol.nombre}</option>
             ))}
           </select>
+          {isEditMode && <p className="text-xs text-gray-500 mt-1">El rol no se puede cambiar en la edición.</p>}
         </Field>
       </div>
-
-      {/* Fila 2: Email y Contraseña (solo en creación) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Field label="Email *" error={invalid.email && "Email es requerido"}>
           <input
@@ -144,28 +201,35 @@ const UsuarioTiendaForm = ({
             value={form.email}
             onChange={(e) => setField("email", e.target.value)}
             onBlur={() => handleBlur("email")}
-            disabled={loading} // Permitimos editar email
+            disabled={loading} 
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 ${invalid.email ? "border-red-500 ring-red-200" : "border-gray-300 focus:ring-blue-700"}`}
             placeholder="ejemplo@tienda.com"
           />
         </Field>
-
         {!isEditMode && (
           <Field label="Contraseña *" error={invalid.password && "Contraseña es requerida"}>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setField("password", e.target.value)}
-              onBlur={() => handleBlur("password")}
-              disabled={loading}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 ${invalid.password ? "border-red-500 ring-red-200" : "border-gray-300 focus:ring-blue-700"}`}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"} 
+                value={form.password}
+                onChange={(e) => setField("password", e.target.value)}
+                onBlur={() => handleBlur("password")}
+                disabled={loading}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 ${invalid.password ? "border-red-500 ring-red-200" : "border-gray-300 focus:ring-blue-700"} pr-10`} // <-- padding-right
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center justify-center h-full w-10 text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </Field>
         )}
       </div>
-
-      {/* Fila 3: Teléfono y Dirección */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Field label="Teléfono">
           <input
@@ -186,8 +250,60 @@ const UsuarioTiendaForm = ({
           />
         </Field>
       </div>
+      {selectedRolNombre === 'vendedor' && (
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+          <h3 className="font-semibold text-gray-800">Perfil de Vendedor</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field label="Tasa de Comisión (%)">
+              <input
+                type="number"
+                step="0.01"
+                value={form.vendedor_profile.tasa_comision}
+                onChange={(e) => setForm(f => ({ ...f, vendedor_profile: { ...f.vendedor_profile, tasa_comision: e.target.value } }))}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700"
+                placeholder="Ej: 5.50"
+              />
+            </Field>
+            <Field label="Fecha de Contratación (Vendedor)">
+              <input
+                type="date"
+                value={form.vendedor_profile.fecha_contratacion || ''} 
+                onChange={(e) => setForm(f => ({ ...f, vendedor_profile: { ...f.vendedor_profile, fecha_contratacion: e.target.value } }))}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700"
+              />
+            </Field>
+          </div>
+        </div>
+      )}
 
-      {/* Botones */}
+      {selectedRolNombre === 'admin' && (
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+          <h3 className="font-semibold text-gray-800">Perfil de Administrador</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Field label="Departamento">
+              <input
+                type="text"
+                value={form.admin_profile.departamento}
+                onChange={(e) => setForm(f => ({ ...f, admin_profile: { ...f.admin_profile, departamento: e.target.value } }))}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700"
+                placeholder="Ej: Ventas, Administración"
+              />
+            </Field>
+            <Field label="Fecha de Contratación (Admin)">
+              <input
+                type="date"
+                value={form.admin_profile.fecha_contratacion || ''}
+                onChange={(e) => setForm(f => ({ ...f, admin_profile: { ...f.admin_profile, fecha_contratacion: e.target.value } }))}
+                disabled={loading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700"
+              />
+            </Field>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
         <button
           type="button"

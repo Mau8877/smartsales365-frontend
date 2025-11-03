@@ -1,11 +1,12 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UniversalTable from '@/components/UniversalTable';
-import StatusPill from '@/components/StatusPill'; // Reutilizamos el pill
-import { useServerSideTable } from '@/hooks/useServerSideTable'; // ¡Nuestra magia!
+import StatusPill from "@/components/StatusPill";
+import { useServerSideTable } from '@/hooks/useServerSideTable';
 import apiClient from '@/services/apiClient';
+import authService from "@/services/auth";
 
-// Celda de renderizado para el usuario (Nombre + Rol)
+// (UserCell sin cambios)
 const UserCell = ({ item }) => (
   <div>
     <div className="font-medium text-gray-900">
@@ -19,11 +20,8 @@ const UserCell = ({ item }) => (
 
 const GestionarUsuariosTienda = () => {
   const navigate = useNavigate();
-
-  // --- ¡AQUÍ ESTÁ LA MAGIA! ---
-  // 1. Usamos el hook
-  // 2. Le pasamos un 'fixedQueryFilters' para que SIEMPRE filtre
-  //    por Admin y Vendedor en esta vista.
+  const currentUser = authService.getCurrentUser();
+  console.log(currentUser);
   const { 
     data: rawData,
     loading, 
@@ -33,24 +31,32 @@ const GestionarUsuariosTienda = () => {
     handlePageChange, 
     handleSearchSubmit,
     handleSort,
-    refreshData // <-- ¡Función para recargar!
+    refreshData
   } = useServerSideTable(
-    '/usuarios/users/', // Endpoint del UserViewSet
-    { 'rol__nombre__in': 'admin,vendedor' } // ¡Filtro fijo!
+    '/usuarios/users/',
+    { 'rol__nombre__in': 'admin,vendedor' }
   );
   
-  // Procesamos los datos para la búsqueda (igual que en Bitácora)
+  // --- ¡ACTUALIZAMOS EL MAPEADOR DE DATOS! ---
   const data = useMemo(() => {
     return rawData.map(user => ({
       ...user,
       nombre_completo: `${user.profile?.nombre || ''} ${user.profile?.apellido || ''}`.trim(),
       rol_nombre: user.rol?.nombre,
+      // --- ¡NUEVO CAMPO APLANADO! ---
+      telefono: user.profile?.telefono || '', 
       estado_texto: user.is_active ? "Activo" : "Desactivado"
     }));
   }, [rawData]);
 
-  // --- Definición de Columnas ---
+  // --- ¡COLUMNAS ACTUALIZADAS! ---
   const columns = useMemo(() => [
+    // --- NUEVA COLUMNA: ID ---
+    { 
+      header: "ID", 
+      accessor: "id_usuario",
+      // Es recomendable darle un ancho menor si tu tabla lo permite
+    },
     { 
       header: "Nombre", 
       accessor: "nombre_completo", 
@@ -58,9 +64,17 @@ const GestionarUsuariosTienda = () => {
       sortKey: "profile__apellido"
     },
     { 
-      header: "Email", 
+      header: "Email", // "Correo" en tu petición
       accessor: "email",
       sortKey: "email"
+    },
+    // --- NUEVA COLUMNA: TELÉFONO ---
+    {
+      header: "Teléfono",
+      accessor: "telefono", // Usamos el campo aplanado
+      render: (item) => item.telefono || <span className="text-gray-400">N/A</span>,
+      // Nota: El sortKey "profile__telefono" debe estar habilitado en el backend
+      sortKey: "profile__telefono" 
     },
     { 
       header: "Estado", 
@@ -70,28 +84,42 @@ const GestionarUsuariosTienda = () => {
           text={item.estado_texto}
           type={item.is_active ? 'active' : 'inactive'}
         />
-      ),
-      // 'is_active' no está en 'ordering_fields', así que no hay sortKey
+       ),
+        sortKey: "is_active" // <-- Habilitar 'is_active' en ordering_fields del backend
     },
   ], []);
 
-  // --- Handlers para CRUD ---
+  // --- Handlers de CRUD ---
   const handleAdd = () => {
     navigate('/dashboard/usuarios/tienda/nuevo');
   };
 
+  // --- ¡HANDLE EDIT CON LÓGICA DE PERFIL! ---
   const handleEdit = (user) => {
-    navigate(`/dashboard/usuarios/tienda/${user.id_usuario}`);
+    if (user.id_usuario === currentUser.user_id) {
+      // Si es mi propia cuenta, voy a /profile
+      navigate('/dashboard/profile');
+    } else {
+      // Si es otro usuario, voy a la página de edición
+      navigate(`/dashboard/usuarios/tienda/${user.id_usuario}`);
+    }
   };
 
-  const handleDelete = async (user) => {
-    if (window.confirm(`¿Estás seguro que quieres eliminar a ${user.nombre_completo || user.email}?`)) {
+  // --- ¡HANDLE DELETE AHORA ES SOFT DELETE! ---
+  const handleDeactivate = async (user) => {
+    // La autoprotección ya está en el botón, pero una doble comprobación no hace daño
+    if (user.id_usuario === currentUser.user_id) {
+      alert("No puedes desactivarte a ti mismo.");
+      return;
+    }
+    
+    if (window.confirm(`¿Estás seguro que quieres DESACTIVAR a ${user.nombre_completo || user.email}?`)) {
       try {
-        await apiClient.delete(`/usuarios/users/${user.id_usuario}/`);
-        refreshData(); // ¡Recarga la tabla!
+        await apiClient.patch(`/usuarios/users/${user.id_usuario}/`, { is_active: false });
+        refreshData(); // Recarga la tabla para mostrar el cambio
       } catch (error) {
-        console.error("Error al eliminar usuario:", error);
-        alert("Error al eliminar usuario: " + (error.detail || error.message));
+        console.error("Error al desactivar usuario:", error);
+        alert("Error al desactivar usuario: " + (error.detail || error.message));
       }
     }
   };
@@ -115,7 +143,6 @@ const GestionarUsuariosTienda = () => {
       columns={columns}
       loading={loading}
       
-      // Búsqueda y Paginación (Modo Servidor)
       searchMode="manual"
       onSearchSubmit={handleSearchSubmit}
       pagination={pagination}
@@ -123,12 +150,13 @@ const GestionarUsuariosTienda = () => {
       onSort={handleSort}
       orderingState={orderingState}
       
-      // Acciones CRUD
+      currentUserId={currentUser.user_id}
+      
       showAddButton={true}
       addButtonText="Agregar Usuario"
       onAdd={handleAdd}
       onEdit={handleEdit}
-      onDelete={handleDelete}
+      onDelete={handleDeactivate}
       
       searchPlaceholder="Buscar por nombre, email..."
       emptyMessage="No se encontraron usuarios"

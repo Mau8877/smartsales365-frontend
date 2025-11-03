@@ -51,12 +51,17 @@ const UniversalTable = ({
   addButtonText = "Agregar",
   showAddButton = true,
   emptyMessage = "No hay datos disponibles",
+  
   searchMode = "auto",
   onSearchSubmit,
   pagination,
   onPageChange,
+  
   onSort,
   orderingState,
+  
+  // --- ¡NUEVA PROP DE AUTOPROTECCIÓN! ---
+  currentUserId = null,
 }) => {
   
   // (Lógica de estado y paginación - sin cambios)
@@ -124,18 +129,13 @@ const UniversalTable = ({
     return (
       <>
         {/* --- Tabla Desktop --- */}
-        {/* 'overflow-x-auto' se quita, ya no es necesario si la tabla es 'w-full' */}
         <div className="hidden lg:block">
-          
-          {/* --- ¡LA CORRECCIÓN ESTÁ AQUÍ! --- */}
-          {/* Volvemos a 'w-full'. El texto ahora se partirá en varias líneas. */}
-          <table className="w-full">
+          <table className="w-full"> {/* Volvemos a w-full para que el texto se parta */}
             <thead className="bg-gray-50">
               <tr>
                 {columns.map((column, index) => (
                   <th
                     key={column.accessor || index}
-                    // Revertimos padding a px-4
                     className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider" 
                   >
                     {column.sortKey && onSort ? (
@@ -162,14 +162,12 @@ const UniversalTable = ({
               {currentData.map((item) => (
                 <tr key={item.id} className="hover:bg-blue-50 transition">
                   {columns.map((column, colIndex) => (
-                    // --- ¡Y AQUÍ! ---
-                    // Quitamos 'whitespace-nowrap'. Revertimos padding a px-4
-                    <td key={colIndex} className="px-4 py-3 text-sm text-gray-900">
+                    <td key={colIndex} className="px-4 py-3 text-sm text-gray-900"> {/* Sin whitespace-nowrap */}
                       {column.render ? column.render(item) : item[column.accessor]}
                     </td>
                   ))}
                   {showActions && (
-                    <td className="px-4 py-3 text-right text-sm font-medium"> {/* Quitamos whitespace */}
+                    <td className="px-4 py-3 text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
                         {onEdit && (
                           <button onClick={() => onEdit(item)} className="text-blue-700 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors" title="Editar">
@@ -177,7 +175,18 @@ const UniversalTable = ({
                           </button>
                         )}
                         {onDelete && (
-                          <button onClick={() => onDelete(item)} className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors" title="Eliminar">
+                          // --- ¡CORRECCIÓN DE AUTOPROTECCIÓN! ---
+                          <button
+                            onClick={() => onDelete(item)}
+                            // Deshabilitado si el ID del item es el ID del usuario actual
+                            disabled={item.id_usuario === currentUserId}
+                            className={`p-2 rounded-full transition-colors ${
+                              item.id_usuario === currentUserId
+                                ? "text-gray-400 opacity-50 cursor-not-allowed"
+                                : "text-red-600 hover:text-red-900 hover:bg-red-100"
+                            }`}
+                            title={item.id_usuario === currentUserId ? "No puedes desactivarte a ti mismo" : "Desactivar Usuario"}
+                          >
                             <Trash2 size={16} />
                           </button>
                         )}
@@ -214,9 +223,18 @@ const UniversalTable = ({
                       </button>
                     )}
                     {onDelete && (
-                      <button onClick={() => onDelete(item)} className="flex items-center gap-1 text-red-600 hover:text-red-900 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+                      // --- ¡CORRECCIÓN DE AUTOPROTECCIÓN (MÓVIL)! ---
+                      <button
+                        onClick={() => onDelete(item)}
+                        disabled={item.id_usuario === currentUserId}
+                        className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                          item.id_usuario === currentUserId
+                            ? "text-gray-400 opacity-50 cursor-not-allowed"
+                            : "text-red-600 hover:text-red-900 hover:bg-red-50"
+                        }`}
+                      >
                         <Trash2 size={16} />
-                        Eliminar
+                        Desactivar
                       </button>
                     )}
                   </div>

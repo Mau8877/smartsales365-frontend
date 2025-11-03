@@ -17,10 +17,11 @@ const CrearUsuarioTienda = () => {
   useEffect(() => {
     apiClient.get("/usuarios/roles/") 
       .then(response => {
-        const allRoles = response || [];
+        const allRoles = response || []; 
+        
         // Filtramos en el frontend
         if (currentUser.rol === 'superAdmin') {
-           setRoles(allRoles);
+           setRoles(allRoles.filter(r => r.nombre === 'admin' || r.nombre === 'vendedor'));
         } else {
            setRoles(allRoles.filter(r => r.nombre === 'vendedor'));
         }
@@ -39,7 +40,10 @@ const CrearUsuarioTienda = () => {
       navigate("/dashboard/usuarios/tienda");
     } catch (e) {
       console.error(e);
-      const errorMsg = Object.values(e).flat().join('; ');
+      // Mejoramos la visualización de errores de DRF
+      const errorMsg = (typeof e === 'object' && e !== null)
+        ? Object.entries(e).map(([key, value]) => `${key}: ${value.flat().join(' ')}`).join('; ')
+        : "Error al crear el usuario.";
       setError(errorMsg || "Error al crear el usuario.");
     } finally {
       setLoading(false);
