@@ -26,6 +26,11 @@ import CrearUsuarioTienda from "@/pages/Admin/GestionarUsuariosTienda/create.jsx
 import EditarUsuarioTienda from "@/pages/Admin/GestionarUsuariosTienda/edit.jsx"
 
 import Bitacora from "@/pages/Admin/Bitacora/index.jsx"
+
+import GestionarMarcaProductos from "@/pages/Admin/GestionarMarcaProductos/index.jsx"
+import CrearMarca from "@/pages/Admin/GestionarMarcaProductos/create.jsx"
+import EditarMarca from "@/pages/Admin/GestionarMarcaProductos/edit.jsx"
+
 import GestionarCategoriaProductos from "@/pages/Admin/GestionarCategoriaProductos/index.jsx"
 import GestionarProductos from "@/pages/Admin/GestionarProductos/index.jsx"
 import PagoProductos from "@/pages/Admin/PagoProductos/index.jsx"
@@ -100,19 +105,17 @@ const router = createBrowserRouter([
       },
       {
         path: "usuarios/tienda",
-        // (Opcional: aquí podrías poner un Layout anidado si quisieras)
-        // element: <UsuariosTiendaLayout />, 
         children: [
           {
-            index: true, // <-- /dashboard/usuarios/tienda
+            index: true,
             element: <GestionarUsuariosTienda />,
           },
           {
-            path: "nuevo", // <-- /dashboard/usuarios/tienda/nuevo
+            path: "nuevo",
             element: <CrearUsuarioTienda />,
           },
           {
-            path: ":id", // <-- /dashboard/usuarios/tienda/1
+            path: ":id",
             element: <EditarUsuarioTienda />,
           },
         ]
@@ -120,6 +123,23 @@ const router = createBrowserRouter([
       {
         path:"usuarios/clientes",
         element:<GestionarUsuariosClientes />
+      },
+      {
+        path:"comercial/marcas",
+        children: [
+          {
+            index: true,
+            element:<GestionarMarcaProductos />
+          },
+          {
+            path: "nueva",
+            element: <CrearMarca />,
+          },
+          {
+            path: ":id",
+            element: <EditarMarca />,
+          },
+        ]
       },
       {
         path:"comercial/categorias",

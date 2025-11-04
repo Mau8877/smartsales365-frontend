@@ -19,15 +19,13 @@ const SaaSLogin = () => {
 
   // Función que se ejecuta al enviar el formulario de login
   const handleLoginSubmit = async (event) => {
-    event.preventDefault(); // Evita que la página se recargue
-    setError(null); // Limpia errores anteriores
-    setIsLoading(true); // Activa el estado de carga
+    event.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
     try {
-      // Llama al método login de tu servicio de autenticación
       const userData = await AuthService.login(email, password);
 
-      // --- LÓGICA DE REDIRECCIÓN CONDICIONAL ---
       if (
         userData.rol === "admin" ||
         userData.rol === "vendedor" ||
@@ -37,18 +35,24 @@ const SaaSLogin = () => {
       } else if (userData.rol === "cliente") {
         navigate("/tiendas", { replace: true });
       } else {
-        // Si el rol no es reconocido, redirige al home público
         navigate("/", { replace: true });
       }
     } catch (err) {
-      // Captura el error de la API y lo guarda en el estado para mostrarlo
-      const errorMessage =
-        err.response?.data?.error ||
-        err.message ||
-        "Ocurrió un error inesperado.";
-      setError(errorMessage);
+      console.error("Error de login:", err);
+
+      // 🔹 Si el backend devolvió 401 → credenciales incorrectas
+      if (err.response?.status === 401) {
+        setError("Correo o contraseña incorrectas.");
+      } 
+      // 🔹 Si faltan campos
+      else if (err.response?.status === 400) {
+        setError("Por favor, completa todos los campos.");
+      } 
+      // 🔹 Cualquier otro error
+      else {
+        setError("Ocurrió un error inesperado. Intenta nuevamente.");
+      }
     } finally {
-      // Desactiva el estado de carga, tanto si hubo éxito como si hubo error
       setIsLoading(false);
     }
   };

@@ -5,16 +5,17 @@ import {
   UserCog,
   UserCheck,
   ShoppingCart,
+  Tag,
   BarChart,
-  Settings, // Aún se usa para SaaS, así que lo mantenemos
+  Settings,
   ClipboardList,
   ShieldCheck,
   Database,
   BookCopy,
   Briefcase,
   DollarSign,
-  LayoutGrid, // <-- 1. ÍCONO NUEVO para Categorías
-  Sparkles,   // <-- 2. ÍCONO NUEVO para Predicciones (IA)
+  LayoutGrid,
+  Sparkles, 
 } from "lucide-react";
 
 const iconSize = 20;
@@ -66,10 +67,14 @@ export const generateMenuItems = (currentUser) => {
       icon: <Briefcase size={iconSize} />,
       subItems: [
         {
+          label: "Gestionar Marcas de Productos",
+          path: "comercial/marcas",
+          icon: <Tag size={iconSize} />,
+        },
+        {
           label: "Gestionar Categoria de Productos",
           path: "comercial/categorias",
-          // --- ¡CAMBIO 1! ---
-          icon: <LayoutGrid size={iconSize} />, // <-- Ícono de "tuerquita" reemplazado
+          icon: <LayoutGrid size={iconSize} />,
         },
         {
           label: "Gestionar Productos",

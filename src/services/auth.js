@@ -101,9 +101,14 @@ class AuthService {
   }
 
   async login(email, password) {
-    const responseData = await apiClient.login(email, password);
-    this.saveUserToStorage(responseData);
-    return responseData;
+    try {
+      const responseData = await apiClient.login(email, password);
+      this.saveUserToStorage(responseData);
+      return responseData;
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      throw error;
+    }
   }
 
   async logout() {

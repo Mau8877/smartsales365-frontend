@@ -24,11 +24,18 @@ class ApiClient {
       (response) => response.data,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("userData");
-          window.location.href = "/saas-login";
+          const isLoginRequest = error.config?.url?.includes("/usuarios/users/login/");
+          
+          if (!isLoginRequest) {
+            // Solo redirige si NO estamos en el login
+            localStorage.removeItem("token");
+            localStorage.removeItem("userData");
+            window.location.href = "/saas-login";
+          }
         }
-        return Promise.reject(error.response.data || error.message); // Devuelve los errores de forma más limpia
+
+        // Aseguramos que el error mantenga su estructura original
+        return Promise.reject(error);
       }
     );
   }
