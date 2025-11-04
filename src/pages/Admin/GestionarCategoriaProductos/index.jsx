@@ -1,50 +1,127 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Users } from 'lucide-react'; // Re-usamos el ícono del menú
+import React, { useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import UniversalTable from '@/components/UniversalTable';
+import StatusPill from "@/components/StatusPill";
+import { useServerSideTable } from '@/hooks/useServerSideTable';
+import apiClient from '@/services/apiClient';
+import authService from "@/services/auth";
 
 const GestionarCategoriaProductos = () => {
-  // Variantes de animación consistentes con el Dashboard
-  const pageVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  const navigate = useNavigate();
+  const currentUser = authService.getCurrentUser();
+  
+  const { 
+    data: rawData,
+    loading, 
+    error, 
+    pagination, 
+    orderingState,
+    handlePageChange, 
+    handleSearchSubmit,
+    handleSort,
+    refreshData
+  } = useServerSideTable('/comercial/categorias/');
+  
+  // Mapea los datos para aplanar 'estado'
+  const data = useMemo(() => {
+    return rawData.map(item => ({
+      ...item,
+      estado_texto: item.estado ? "Activo" : "Inactivo"
+    }));
+  }, [rawData]);
+
+  // Definición de Columnas
+  const columns = useMemo(() => [
+    { 
+      header: "ID", 
+      accessor: "id",
+      sortKey: "id"
+    },
+    { 
+      header: "Nombre", 
+      accessor: "nombre", 
+      sortKey: "nombre"
+    },
+    { 
+      header: "Descripción", 
+      accessor: "descripcion",
+      render: (item) => item.descripcion || <span className="text-gray-400">N/A</span>
+    },
+    { 
+      header: "Estado", 
+      accessor: "estado_texto",
+      render: (item) => (
+        <StatusPill
+          text={item.estado_texto}
+          type={item.estado ? 'active' : 'inactive'}
+        />
+       ),
+       sortKey: "estado"
+    },
+  ], []);
+
+  // Handlers de CRUD
+  const handleAdd = () => {
+    navigate('/dashboard/comercial/categorias/nueva');
   };
 
-  return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
-      {/* Usamos una tarjeta blanca similar a las del Dashboard
-        para mantener la consistencia visual.
-      */}
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        
-        {/* Un pequeño encabezado para la página */}
-        <div className="flex items-center gap-3 mb-4 border-b pb-4">
-          <Users className="text-blue-700" size={28} />
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Módulo: Gestionar Usuarios de Tienda
-          </h2>
-        </div>
+  const handleEdit = (item) => {
+    navigate(`/dashboard/comercial/categorias/${item.id}`);
+  };
 
-        <p className="text-gray-600">
-          Hola! Esta es la página para la gestión de usuarios (Administradores y Vendedores).
-        </p>
+  // Implementa el "Delete Lógico"
+  const handleDeactivate = async (item) => {
+    if (window.confirm(`¿Estás seguro que quieres DESACTIVAR la categoría ${item.nombre}?`)) {
+      try {
+        // Usamos el método DELETE que el backend interpreta como borrado lógico
+        await apiClient.delete(`/comercial/categorias/${item.id}/`);
+        refreshData(); // Recarga la tabla para mostrar el cambio
+      } catch (error) {
+        console.error("Error al desactivar categoría:", error);
+        alert("Error al desactivar categoría: " + (error.detail || error.message));
+      }
+    }
+  };
 
-        {/* Un 'placeholder' para el contenido futuro */}
-        <div className="mt-6 p-6 bg-gray-50 rounded-lg border text-center">
-          <h3 className="text-lg font-semibold text-gray-700">
-            Próximamente: Tabla de Usuarios
-          </h3>
-          <p className="text-gray-500 mt-2">
-            Aquí es donde construirás la tabla para ver, crear, editar y eliminar usuarios.
-          </p>
-        </div>
-
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+        <h2 className="text-xl font-bold text-red-600">Error de Carga</h2>
+        <p className="text-gray-700 mt-2">No se pudieron cargar las categorías.</p>
+        <pre className="bg-gray-100 p-4 rounded-md mt-4 text-red-800 overflow-auto">
+          {error}
+        </pre>
       </div>
-    </motion.div>
+    );
+  }
+
+  return (
+    <UniversalTable
+      title="Tabla de Categorías"
+      data={data}
+      columns={columns}
+      loading={loading}
+      
+      searchMode="manual"
+      onSearchSubmit={handleSearchSubmit}
+      pagination={pagination}
+      onPageChange={handlePageChange}
+      onSort={handleSort}
+      orderingState={orderingState}
+      
+      // Pasamos el ID del usuario actual (si es necesario para permisos en el futuro)
+      currentUserId={currentUser.user_id} 
+      
+      showAddButton={true}
+      addButtonText="Agregar Categoría"
+      onAdd={handleAdd}
+      onEdit={handleEdit}
+      onDelete={handleDeactivate} // El botón de "borrar" ahora desactiva
+      deleteButtonText="Desactivar"
+      
+      searchPlaceholder="Buscar por nombre..."
+      emptyMessage="No se encontraron categorías"
+    />
   );
 };
 

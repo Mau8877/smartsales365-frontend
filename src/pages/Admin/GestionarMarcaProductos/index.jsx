@@ -47,19 +47,12 @@ const GestionarMarcaProductos = () => {
     { 
       header: "Nombre", 
       accessor: "nombre", 
-      sortKey: "nombre" // Habilitamos ordenamiento por nombre
+      sortKey: "nombre"
     },
     { 
-      header: "Descripción",
+      header: "Descripción", 
       accessor: "descripcion",
-      // Acortamos la descripción si es muy larga
-      render: (item) => item.descripcion ? (
-          <span title={item.descripcion}>
-            {item.descripcion.substring(0, 50)}{item.descripcion.length > 50 ? '...' : ''}
-          </span>
-        ) : (
-          <span className="text-gray-400">N/A</span>
-        ),
+      render: (item) => item.descripcion || <span className="text-gray-400">N/A</span>
     },
     { 
       header: "Estado", 
@@ -70,7 +63,7 @@ const GestionarMarcaProductos = () => {
           type={item.estado ? 'active' : 'inactive'}
         />
       ),
-      sortKey: "estado" // Habilitamos ordenamiento por estado
+      sortKey: "estado"
     },
   ], []);
 
@@ -118,7 +111,7 @@ const GestionarMarcaProductos = () => {
   // Renderizado de la tabla
   return (
     <UniversalTable
-      title="Gestión de Marcas"
+      title="Tabla de Marcas"
       data={data}
       columns={columns}
       loading={loading}
