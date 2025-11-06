@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
-import StatusToggle from "@/components/StatusToggle"; // Ajustada la ruta
+import StatusToggle from "@/components/StatusToggle"; 
 
 // Componente de Campo genérico
 const Field = ({ label, error, children }) => (

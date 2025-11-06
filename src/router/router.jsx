@@ -36,6 +36,9 @@ import CrearCategoria from "@/pages/Admin/GestionarCategoriaProductos/create.jsx
 import EditarCategoria from "@/pages/Admin/GestionarCategoriaProductos/edit.jsx"
 
 import GestionarProductos from "@/pages/Admin/GestionarProductos/index.jsx"
+import CrearProducto from "@/pages/Admin/GestionarProductos/create.jsx"
+import EditarProducto from "@/pages/Admin/GestionarProductos/edit.jsx"
+
 import PagoProductos from "@/pages/Admin/PagoProductos/index.jsx"
 import GenerarNotaVenta from "@/pages/Admin/GenerarNotaVenta/index.jsx"
 import HistorialVentas from "@/pages/Admin/HistorialVentas/index.jsx"
@@ -163,7 +166,20 @@ const router = createBrowserRouter([
       },
       {
         path:"comercial/productos",
-        element:<GestionarProductos />
+        children: [
+          {
+            index: true,
+            element:<GestionarProductos />
+          },
+          {
+            path: "nuevo",
+            element: <CrearProducto />,
+          },
+          {
+            path: ":id",
+            element: <EditarProducto />,
+          },
+        ]
       },
       {
         path:"ventas/productos",
