@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import authService from "@/services/auth";
-import { generateMenuItems } from "@/pages/Admin/menuItems.jsx"; // (Tu ruta)
+import { generateMenuItems } from "@/pages/Admin/menuItems.jsx";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import { useIdleTimer } from "@/hooks/useIdleTimer"; // <-- ¡AÑADIDO!
+import { useIdleTimer } from "@/hooks/useIdleTimer";
 
 /**
  * Aplana la estructura de menú (grupos -> items -> subItems)

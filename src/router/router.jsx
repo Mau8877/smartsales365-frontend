@@ -19,6 +19,7 @@ import ProtectedRoute from "@/components/ProtectedRoute.jsx"; // Asegúrate de q
 import AdminDashboard from "@/pages/Admin/AdminDashboard.jsx";
 import AdministrativeLayout from "@/layouts/AdministrativeLayout.jsx";
 import EditProfile from "@/pages/Admin/EditProfile.jsx";
+import EditStore from "@/pages/Admin/EditStore.jsx";
 import GestionarUsuariosClientes from "@/pages/Admin/GestionarUsuariosClientes/index.jsx"
 
 import GestionarUsuariosTienda from "@/pages/Admin/GestionarUsuariosTienda/index.jsx"
@@ -104,6 +105,10 @@ const router = createBrowserRouter([
       {
         path:"profile",
         element:<EditProfile />
+      },
+      {
+        path:"editstore",
+        element:<EditStore />
       },
       {
         path:"bitacora/index",

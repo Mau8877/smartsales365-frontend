@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom"; // Se quitó useLocation
-import { LogOut, Menu, User } from "lucide-react";
+import { LogOut, Menu, User, Store } from "lucide-react";
 import authService from "@/services/auth";
 import apiClient from "@/services/apiClient";
 
@@ -166,6 +166,17 @@ const Header = ({ toggleSidebar, title }) => {
                     <User size={18} />
                     <span>Editar Perfil</span>
                   </Link>
+
+                  { (currentUser.rol === 'admin' || currentUser.rol === 'vendedor') && (
+                    <Link
+                      to="/dashboard/editstore"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 active:bg-blue-100 transition-all duration-150 ease-in-out cursor-pointer"
+                    >
+                      <Store size={18} />
+                      <span>Editar Tienda</span>
+                    </Link>
+                  )}
 
                   <button
                     onClick={handleLogout}

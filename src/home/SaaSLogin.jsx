@@ -1,23 +1,25 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import AuthService from "@/services/auth"; // Asegúrate que la ruta a tu auth.js sea correcta
+import { ArrowLeft } from "lucide-react";
+import AuthService from "@/services/auth";
 
 const SaaSLogin = () => {
   const navigate = useNavigate();
 
-  // Estados para manejar los inputs del formulario, errores y carga
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Navega a la página de registro
   const handleRegisterClick = () => {
     navigate("/saas-register");
   };
 
-  // Función que se ejecuta al enviar el formulario de login
+  const handleBackClick = () => {
+    navigate("/");
+  };
+
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
     setError(null);
@@ -39,17 +41,11 @@ const SaaSLogin = () => {
       }
     } catch (err) {
       console.error("Error de login:", err);
-
-      // 🔹 Si el backend devolvió 401 → credenciales incorrectas
       if (err.response?.status === 401) {
         setError("Correo o contraseña incorrectas.");
-      } 
-      // 🔹 Si faltan campos
-      else if (err.response?.status === 400) {
+      } else if (err.response?.status === 400) {
         setError("Por favor, completa todos los campos.");
-      } 
-      // 🔹 Cualquier otro error
-      else {
+      } else {
         setError("Ocurrió un error inesperado. Intenta nuevamente.");
       }
     } finally {
@@ -58,8 +54,17 @@ const SaaSLogin = () => {
   };
 
   return (
-    <div className="h-screen bg-white flex overflow-hidden">
-      {/* Sección izquierda 40% - Formulario Login */}
+    <div className="h-screen bg-white flex overflow-hidden relative">
+      {/* Botón Volver */}
+      <button
+        onClick={handleBackClick}
+        className="absolute top-4 left-4 flex items-center text-gray-700 hover:text-blue-600 transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5 mr-1" />
+        <span className="text-sm font-medium hidden sm:inline">Volver</span>
+      </button>
+
+      {/* Sección izquierda */}
       <div className="w-full md:w-2/5 flex items-center justify-center p-8">
         <motion.div
           className="w-full max-w-md"
@@ -88,7 +93,6 @@ const SaaSLogin = () => {
             Accede al panel de control de tu tienda
           </p>
 
-          {/* --- MENSAJE DE ERROR --- */}
           {error && (
             <div
               className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-4"
@@ -99,7 +103,6 @@ const SaaSLogin = () => {
             </div>
           )}
 
-          {/* Formulario */}
           <form className="space-y-4" onSubmit={handleLoginSubmit}>
             <div>
               <label
@@ -156,7 +159,6 @@ const SaaSLogin = () => {
             </motion.button>
           </form>
 
-          {/* Registro */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <p className="text-center text-gray-600 mb-3 text-sm">
               ¿No tienes una cuenta?
@@ -173,7 +175,7 @@ const SaaSLogin = () => {
         </motion.div>
       </div>
 
-      {/* Sección derecha 60% - Branding */}
+      {/* Sección derecha */}
       <div className="hidden md:flex md:w-3/5 bg-gradient-to-br from-blue-600 to-indigo-700 items-center justify-center px-12">
         <motion.div
           className="text-center text-white max-w-md"
