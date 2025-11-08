@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiClient from "@/services/apiClient";
 import {
-  AlertCircle, // <-- CORREGIDO
-  CheckCircle,  // <-- CORREGIDO
+  AlertCircle,
+  CheckCircle, 
   Store,
-  Image,          // <-- CORREGIDO
+  Image,         
   UploadCloud,
   Loader,
 } from "lucide-react";
 
-// --- COMPONENTE DE ALERTA (Corregido para usar Lucide) ---
+// --- COMPONENTE DE ALERTA) ---
 const Alert = ({ type, message }) => {
   if (!message) return null;
   const styles = {
@@ -37,7 +37,7 @@ const Alert = ({ type, message }) => {
   );
 };
 
-// --- COMPONENTES DE FORMULARIO (Sin cambios) ---
+// --- COMPONENTES DE FORMULARIO ---
 const FormInput = ({
   label,
   name,
@@ -84,7 +84,7 @@ const FormTextarea = ({ label, name, value, onChange, placeholder = "", disabled
   </div>
 );
 
-// --- COMPONENTE DE SUBIDA DE IMAGEN (Sin cambios) ---
+// --- COMPONENTE DE SUBIDA DE IMAGEN ---
 const ImageUploader = ({
   label,
   previewUrl,
@@ -128,7 +128,6 @@ const ImageUploader = ({
 );
 
 // --- COMPONENTE PRINCIPAL (REFACTORIZADO) ---
-
 const EditStore = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -274,7 +273,7 @@ const EditStore = () => {
           {/* SECCIÓN DE IMÁGENES */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
-              <Image className="h-6 w-6" /> {/* <-- CORREGIDO */}
+              <Image className="h-6 w-6" />
               Identidad Visual
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

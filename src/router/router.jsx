@@ -5,7 +5,8 @@ import SaaSHomePage from "@/home/SaaSHomePage.jsx";
 import SaaSLogin from "@/home/SaaSLogin.jsx";
 import SaaSRegister from "@/home/SaaSRegister.jsx";
 import ReturnStripe from "@/home/components/SaaS/ReturnStripe.jsx";
-
+import ClienteLogin from "@/pages/Store/ClienteLogin.jsx";
+import ClienteRegister from "@/pages/Store/ClienteRegister.jsx";
 
 // Paginas para clientes
 import StoreHomePage from "@/home/StoreHomePage.jsx";
@@ -63,7 +64,6 @@ const router = createBrowserRouter([
       </PublicRoute>
     ),
   },
-  
   {
     path: "/saas-login",
     element: (
@@ -221,27 +221,34 @@ const router = createBrowserRouter([
     ],
   },
 
-  // --- RUTAS PRIVADAS PARA CLIENTES ---
-  // También protegidas. El componente ProtectedRoute se encargará de
-  // permitir el paso si el rol es 'cliente' (o cualquier otro rol autenticado).
+  // --- RUTAS PARA CLIENTES ---
   {
     path: "/tiendas",
+    element: 
+        <StoreHomePage />
+  },
+  {
+    path: "/tiendas/login",
     element: (
       <PublicRoute>
-        <StoreHomePage />
+        <ClienteLogin />
       </PublicRoute>
     ),
   },
   {
-    path: "/tienda/:storeName",
+    path: "/tiendas/register",
     element: (
-      <ProtectedRoute>
-        <StoreLayout />
-      </ProtectedRoute>
+      <PublicRoute>
+        <ClienteRegister />
+      </PublicRoute>
     ),
-    children: [
-      // ... rutas específicas de la tienda de un cliente
-    ],
+  },
+  {
+    path: "/tienda/:slug", 
+    element: 
+        <StoreLayout />
+    //children: [
+    //],
   },
 
   //Atrapa cualquier otra ruta que no coincida.

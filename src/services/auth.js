@@ -100,6 +100,9 @@ class AuthService {
     return mergedData;
   }
 
+  /*
+    INICIO DE SESION PARA HERRAMIENTAS
+  */
   async login(email, password) {
     try {
       const responseData = await apiClient.login(email, password);
@@ -122,6 +125,51 @@ class AuthService {
     } finally {
       this.clearUserFromStorage();
       window.location.href = "/saas-login";
+    }
+  }
+
+  /*
+    INICIO DE SESION PARA CLIENTES
+  */
+  async loginCustomer(email, password) {
+    try {
+      // Llama al endpoint de Cliente
+      const responseData = await apiClient.customerLogin(email, password);
+      this.saveUserToStorage(responseData);
+      return responseData;
+    } catch (error) {
+      console.error("Error al iniciar sesión (Cliente):", error);
+      throw error;
+    }
+  }
+
+  /**
+   * NUEVO: Registro de Clientes (Global)
+   */
+  async registerCustomer(userData) {
+    try {
+      const responseData = await apiClient.customerRegister(userData);
+      this.saveUserToStorage(responseData);
+      return responseData;
+    } catch (error) {
+       console.error("Error al registrar (Cliente):", error);
+       throw error;
+    }
+  }
+
+  /**
+   * NUEVO: Logout para Clientes (NO Redirige)
+   */
+  async logoutCustomer() {
+    try {
+      await apiClient.logout();
+    } catch (error) {
+      console.error(
+        "Fallo en el logout del backend (Cliente). Limpiando localmente.",
+        error
+      );
+    } finally {
+      this.clearUserFromStorage();
     }
   }
 

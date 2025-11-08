@@ -24,13 +24,39 @@ class ApiClient {
       (response) => response.data,
       (error) => {
         if (error.response?.status === 401) {
-          const isLoginRequest = error.config?.url?.includes("/usuarios/users/login/");
+          
+          // --- LÓGICA MEJORADA ---
+          // Comprueba si el 401 ocurrió en CUALQUIERA de las páginas de login
+          const url = error.config?.url || "";
+          // Ajusta estas rutas si las URL de tu API son diferentes
+          const isSaaSLogin = url.includes("/usuarios/users/login/"); 
+          const isCustomerLogin = url.includes("/usuarios/users/customer-login/");
+          const isLoginRequest = isSaaSLogin || isCustomerLogin;
+          // --- FIN LÓGICA MEJORADA ---
           
           if (!isLoginRequest) {
-            // Solo redirige si NO estamos en el login
+            // No es un login fallido, es un token expirado.
+            // Hay que decidir a dónde redirigir.
+            const userDataStr = localStorage.getItem("userData");
+            
+            // Limpiamos la sesión pase lo que pase
             localStorage.removeItem("token");
             localStorage.removeItem("userData");
-            window.location.href = "/saas-login";
+
+            try {
+              const userData = userDataStr ? JSON.parse(userDataStr) : null;
+              
+              if (userData && userData.rol === 'cliente') {
+                // Si el usuario era cliente, lo mandamos al login de cliente
+                window.location.href = "/tiendas/login";
+              } else {
+                // Si era Admin/Vendedor/SuperAdmin, lo mandamos al login de SaaS
+                window.location.href = "/saas-login";
+              }
+            } catch (e) {
+              // Si hay error leyendo el JSON, vamos a lo seguro
+              window.location.href = "/saas-login";
+            }
           }
         }
 
@@ -40,20 +66,46 @@ class ApiClient {
     );
   }
 
-  // ========== AUTH ENDPOINTS ==========
+  // ========== AUTH ENDPOINTS (SaaS/Admin) ==========
   async login(email, password) {
+    // Esta es tu función de login de SaaS/Admin
     return this.client.post("/usuarios/users/login/", { email, password });
   }
 
   async logout() {
+    // Esta es tu función de logout de SaaS/Admin
     return this.client.post("/usuarios/users/logout/");
   }
+
+  // === INICIO DE CÓDIGO NUEVO ===
+
+  // ========== AUTH ENDPOINTS (Cliente) ==========
+
+  /**
+   * Llama al endpoint de login DE CLIENTE
+   */
+  async customerLogin(email, password) {
+    // Apunta al endpoint que creamos en views.py
+    return this.client.post("/usuarios/users/customer-login/", { email, password });
+  }
+
+  /**
+   * Llama al endpoint de registro DE CLIENTE
+   */
+  async customerRegister(userData) {
+    // userData es { nombre, apellido, email, password, telefono }
+    // Apunta al endpoint que creamos en views.py
+    return this.client.post("/usuarios/users/customer-register/", userData);
+  }
+
+  // === FIN DE CÓDIGO NUEVO ===
+
 
   // ========== (NUEVO) USER PROFILE ENDPOINTS (/me) ==========
 
   /**
-   * Obtiene los datos completos del usuario autenticado
-   */
+   * Obtiene los datos completos del usuario autenticado
+   */
   async getMe() {
     return this.client.get("/usuarios/users/me/");
   }
