@@ -167,7 +167,7 @@ const Header = ({ toggleSidebar, title }) => {
                     <span>Editar Perfil</span>
                   </Link>
 
-                  { (currentUser.rol === 'admin' || currentUser.rol === 'vendedor') && (
+                  { (currentUser.rol === 'admin') && (
                     <Link
                       to="/dashboard/editstore"
                       onClick={() => setIsMenuOpen(false)}

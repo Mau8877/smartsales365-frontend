@@ -11,16 +11,20 @@ import ClienteRegister from "@/pages/Store/ClienteRegister.jsx";
 // Paginas para clientes
 import StoreHomePage from "@/home/StoreHomePage.jsx";
 import StoreLayout from "@/layouts/StoreLayout.jsx";
+import StoreCart from "@/pages/Store/StoreCart.jsx";
+import StoreProductDetail from "@/pages/Store/StoreProductDetail.jsx";
+import StoreProductsPage from "@/pages/Store/StoreProductsPage.jsx";
 
 // Componentes de protección de rutas
-import PublicRoute from "@/components/PublicRoute.jsx"; // Asegúrate de que la ruta sea correcta
-import ProtectedRoute from "@/components/ProtectedRoute.jsx"; // Asegúrate de que la ruta sea correcta
+import PublicRoute from "@/components/PublicRoute.jsx";
+import ProtectedRoute from "@/components/ProtectedRoute.jsx";
 
 // Paginas para administradores
 import AdminDashboard from "@/pages/Admin/AdminDashboard.jsx";
 import AdministrativeLayout from "@/layouts/AdministrativeLayout.jsx";
 import EditProfile from "@/pages/Admin/EditProfile.jsx";
 import EditStore from "@/pages/Admin/EditStore.jsx";
+
 import GestionarUsuariosClientes from "@/pages/Admin/GestionarUsuariosClientes/index.jsx"
 
 import GestionarUsuariosTienda from "@/pages/Admin/GestionarUsuariosTienda/index.jsx"
@@ -245,10 +249,21 @@ const router = createBrowserRouter([
   },
   {
     path: "/tienda/:slug", 
-    element: 
-        <StoreLayout />
-    //children: [
-    //],
+    element: <StoreLayout />,
+    children: [
+      {
+        index: true,
+        element: <StoreProductsPage />
+      },
+      {
+        path: "producto/:productId",
+        element: <StoreProductDetail />
+      },
+      {
+        path: "carrito",
+        element: <StoreCart />
+      },
+    ],
   },
 
   //Atrapa cualquier otra ruta que no coincida.
