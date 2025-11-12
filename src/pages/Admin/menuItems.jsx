@@ -84,7 +84,24 @@ export const generateMenuItems = (currentUser) => {
       ],
     },
 
-    // Paquete Gestion de Ventas
+    // Paquete Gestion de Ventas 
+    gestionarVentasAdmin: {
+      label: "Gestión de Ventas",
+      icon: <ShoppingCart size={iconSize} />,
+      subItems: [
+        {
+          label: "Generar Nota de Venta",
+          path: "ventas/nota-venta",
+          icon: <ClipboardList size={iconSize} />,
+        },
+        {
+          label: "Historial de Ventas",
+          path: "ventas/historial-ventas",
+          icon: <UserCheck size={iconSize} />,
+        },
+      ],
+    },
+
     gestionarVentas: {
       label: "Gestión de Ventas",
       icon: <ShoppingCart size={iconSize} />,
@@ -174,6 +191,7 @@ export const generateMenuItems = (currentUser) => {
   const usuariosMenuSuper = { name: "Usuarios", items: [menuConfig.gestionarUsuariosSuper] };
   const comercialMenu = { name: "Comercial", items: [menuConfig.gestionComercial] };
   const ventasMenu = { name: "Ventas", items: [menuConfig.gestionarVentas] };
+  const ventasAdminMenu = { name: "Ventas", items: [menuConfig.gestionarVentasAdmin] };
   const reportesMenu = { name: "Reportes", items: [menuConfig.reportes] };
   const prediccionMenu = { name: "Análisis", items: [menuConfig.prediccion] };
   const saasMenu = { name: "SaaS", items: [menuConfig.saas] };
@@ -196,7 +214,7 @@ export const generateMenuItems = (currentUser) => {
         auditoriaMenu,
         usuariosMenu,
         comercialMenu,
-        ventasMenu,
+        ventasAdminMenu,
         reportesMenu,
         prediccionMenu,
       ];

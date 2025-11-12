@@ -14,6 +14,8 @@ import StoreLayout from "@/layouts/StoreLayout.jsx";
 import StoreCart from "@/pages/Store/StoreCart.jsx";
 import StoreProductDetail from "@/pages/Store/StoreProductDetail.jsx";
 import StoreProductsPage from "@/pages/Store/StoreProductsPage.jsx";
+import StorePay from "@/pages/Store/StorePay.jsx";
+import SuccessPay from "@/pages/Store/SuccessPay.jsx";
 
 // Componentes de protección de rutas
 import PublicRoute from "@/components/PublicRoute.jsx";
@@ -262,6 +264,14 @@ const router = createBrowserRouter([
       {
         path: "carrito",
         element: <StoreCart />
+      },
+      {
+        path: "pagar",
+        element: <StorePay />
+      },
+      {
+        path: "pago-exitoso",
+        element: <SuccessPay />
       },
     ],
   },

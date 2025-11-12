@@ -42,12 +42,6 @@ const ProductCard = ({ producto, slug }) => {
         )}
         <div className="flex-grow" />
         <p className="text-green-600 font-bold text-lg mt-2">${producto.precio}</p>
-        <button
-          className="mt-3 w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm font-medium transition-colors"
-          onClick={(e) => e.preventDefault()}
-        >
-          Ver Detalles
-        </button>
       </div>
     </Link>
   );

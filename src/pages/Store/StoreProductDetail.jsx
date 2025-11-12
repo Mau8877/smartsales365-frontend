@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStoreData } from '@/layouts/StoreLayout';
 import publicApiClient from '@/services/publicApiClient';
-import { ArrowLeft, ShoppingCart, Share2, ZoomIn, Check } from 'lucide-react';
+import carritoService from '@/services/carritoService';
+import authService from '@/services/auth';
+import { ArrowLeft, ShoppingCart, Share2, ZoomIn, Check, LogIn, Plus, Minus } from 'lucide-react';
 
 const StoreProductDetail = () => {
   const { productId, slug } = useParams();
@@ -18,16 +20,53 @@ const StoreProductDetail = () => {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [cantidadEnCarrito, setCantidadEnCarrito] = useState(0);
+  const [actualizandoCarrito, setActualizandoCarrito] = useState(false);
   const autoPlayRef = useRef(null);
 
-  // Ordenar fotos: principal primero, luego las demás
+  const actualizarCantidadDesdeStorage = () => {
+    if (producto && slug && isAuthenticated) {
+      const carrito = carritoService.obtenerCarrito(slug); 
+      if (carrito && carrito.items) {
+        const item = carrito.items.find(item => item.id === producto.id);
+        setCantidadEnCarrito(item?.cantidad || 0);
+      } else {
+        setCantidadEnCarrito(0);
+      }
+    } else {
+      setCantidadEnCarrito(0);
+    }
+  };
+
+  const checkAuth = () => {
+    setIsAuthenticated(authService.isAuthenticated());
+  };
+
+  useEffect(() => {
+    checkAuth();
+    
+    const handleCarritoUpdated = () => {
+      actualizarCantidadDesdeStorage();
+    };
+
+    const unsubscribe = carritoService.suscribirACambios(handleCarritoUpdated);
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [slug, store.id, producto, isAuthenticated]);
+
+  useEffect(() => {
+    actualizarCantidadDesdeStorage();
+  }, [producto, isAuthenticated]);
+
   const fotos = producto?.fotos ? [...producto.fotos].sort((a, b) => 
     b.principal - a.principal
   ) : [];
   
   const currentImage = fotos[selectedImageIndex]?.foto || null;
 
-  // Auto-play de imágenes cada 10 segundos
   useEffect(() => {
     if (fotos.length > 1 && isAutoPlaying) {
       autoPlayRef.current = setInterval(() => {
@@ -42,7 +81,6 @@ const StoreProductDetail = () => {
     };
   }, [fotos.length, isAutoPlaying]);
 
-  // Pausar auto-play cuando el usuario interactúa
   const handleManualImageSelect = (index) => {
     setSelectedImageIndex(index);
     setIsAutoPlaying(false);
@@ -51,7 +89,6 @@ const StoreProductDetail = () => {
     }
   };
 
-  // Efecto de zoom al hacer hover
   const handleImageHover = (e) => {
     if (!isZoomed) return;
     
@@ -61,16 +98,13 @@ const StoreProductDetail = () => {
     setZoomPosition({ x, y });
   };
 
-  // Función para copiar URL al portapapeles
   const handleShare = async () => {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Oculta el mensaje después de 2 segundos
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Error al copiar URL:', err);
-      // Fallback para navegadores más antiguos
       const textArea = document.createElement('textarea');
       textArea.value = url;
       document.body.appendChild(textArea);
@@ -94,7 +128,6 @@ const StoreProductDetail = () => {
       setProducto(data);
       
     } catch (err) {
-      console.error('Error al cargar producto:', err);
       setError('No se pudo cargar el producto');
     } finally {
       setLoading(false);
@@ -107,24 +140,106 @@ const StoreProductDetail = () => {
     }
   }, [productId]);
 
-  // Resetear selectedImageIndex cuando cambian las fotos para mostrar la principal primero
   useEffect(() => {
     if (fotos.length > 0) {
-      setSelectedImageIndex(0); // Siempre empezar con la primera foto (que será la principal)
+      setSelectedImageIndex(0);
     }
   }, [fotos.length]);
 
-  const handleAddToCart = () => {
-    console.log(`Producto ${productId} agregado al carrito`);
-    alert(`¡${producto.nombre} agregado al carrito!`);
-  };
-
-  const handleBuyNow = () => {
-    navigate(`/tienda/${slug}/carrito`);
-  };
-
   const toggleDescription = () => {
     setShowFullDescription(!showFullDescription);
+  };
+
+  const handleAuthRedirect = () => {
+    alert('Debes iniciar sesión para agregar productos al carrito');
+    navigate('/login', { 
+      state: { 
+        from: `/tienda/${slug}/producto/${productId}`,
+        message: 'Inicia sesión para agregar productos al carrito'
+      }
+    });
+  };
+
+  const handleAgregarAlCarritoClick = () => {
+    if (!isAuthenticated) return handleAuthRedirect();
+
+    setActualizandoCarrito(true);
+    
+    setTimeout(() => {
+      const resultado = carritoService.agregarProducto(
+        slug, 
+        producto, 
+        1
+      );
+      setActualizandoCarrito(false);
+    }, 50);
+  };
+
+  const handleIncrementar = () => {
+    if (!isAuthenticated) return;
+
+    setActualizandoCarrito(true);
+    
+    setTimeout(() => {
+      const resultado = carritoService.agregarProducto(
+        slug, 
+        producto, 
+        1
+      );
+
+      if (!resultado.success) {
+        alert(`Error: ${resultado.message}`);
+      }
+      setActualizandoCarrito(false);
+    }, 50);
+  };
+
+  const handleDecrementar = () => {
+    if (!isAuthenticated) return;
+
+    setActualizandoCarrito(true);
+
+    setTimeout(() => {
+      const nuevaCantidad = cantidadEnCarrito - 1;
+      
+      const resultado = carritoService.actualizarCantidad(
+        slug, 
+        producto.id, 
+        nuevaCantidad
+      );
+      
+      if (!resultado.success) {
+        alert('Error al actualizar: ' + (resultado.message || 'Error desconocido'));
+      }
+      setActualizandoCarrito(false);
+    }, 50);
+  };
+
+  const handleComprarAhora = () => {
+    if (!isAuthenticated) return handleAuthRedirect();
+
+    if (cantidadEnCarrito > 0) {
+      navigate(`/tienda/${slug}/carrito`);
+      return;
+    }
+
+    setActualizandoCarrito(true);
+    
+    setTimeout(() => {
+      const resultado = carritoService.agregarProducto(
+        slug, 
+        producto, 
+        1
+      );
+      
+      setActualizandoCarrito(false);
+
+      if (resultado.success) {
+        navigate(`/tienda/${slug}/carrito`);
+      } else {
+        alert(`Error: ${resultado.message}`);
+      }
+    }, 50);
   };
 
   if (loading) {
@@ -196,9 +311,7 @@ const StoreProductDetail = () => {
 
       <div className="bg-white rounded-xl shadow-sm p-6 border">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Galería de imágenes mejorada */}
           <div className="space-y-4">
-            {/* Imagen principal con zoom aumentado */}
             <div 
               className="relative bg-gray-100 h-80 md:h-96 rounded-xl overflow-hidden cursor-zoom-in group"
               onMouseEnter={() => setIsZoomed(true)}
@@ -229,7 +342,6 @@ const StoreProductDetail = () => {
               )}
             </div>
             
-            {/* Miniaturas mejoradas */}
             {fotos.length > 1 && (
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
@@ -276,7 +388,6 @@ const StoreProductDetail = () => {
             )}
           </div>
           
-          {/* Información del producto - Botones más arriba */}
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-3 leading-tight">
@@ -302,13 +413,11 @@ const StoreProductDetail = () => {
               </div>
             </div>
 
-            {/* Precio y acciones */}
             <div className="flex items-center justify-between mb-6">
               <p className="text-4xl font-bold text-green-600">
                 ${producto.precio}
               </p>
               <div className="flex gap-3 items-center">
-                {/* Mensaje de URL copiada */}
                 {copied && (
                   <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
                     <Check className="w-4 h-4" />
@@ -328,30 +437,102 @@ const StoreProductDetail = () => {
               </div>
             </div>
 
-            {/* Botones de acción - MOVIDOS MÁS ARRIBA */}
-            <div className="flex gap-4 mb-6">
-              <button 
-                onClick={handleAddToCart}
-                className="flex-1 bg-orange-600 text-white px-6 py-4 rounded-xl hover:bg-orange-700 transition-all duration-200 flex items-center justify-center gap-3 font-medium text-lg shadow-md hover:shadow-lg"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                Agregar al Carrito
-              </button>
-              <button 
-                onClick={handleBuyNow}
-                className="flex-1 border-2 border-orange-600 text-orange-600 px-6 py-4 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-200 font-medium text-lg shadow-md hover:shadow-lg"
-              >
-                Comprar Ahora
-              </button>
-            </div>
+            {!isAuthenticated && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <LogIn className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <p className="text-yellow-800 font-medium text-sm">
+                      Inicia sesión para comprar
+                    </p>
+                    <p className="text-yellow-700 text-sm">
+                      Debes tener una cuenta para agregar productos al carrito y realizar compras.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Información adicional - SIN STOCK */}
+            {cantidadEnCarrito > 0 ? (
+              <div className="flex gap-4 mb-6">
+                <div className="flex-1 flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <button
+                    onClick={handleDecrementar}
+                    disabled={!isAuthenticated || actualizandoCarrito}
+                    className="flex items-center justify-center w-10 h-10 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {actualizandoCarrito ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Minus className="w-5 h-5" />
+                    )}
+                  </button>
+                  
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg font-semibold text-gray-800">
+                      {cantidadEnCarrito} en carrito
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ${(producto.precio * cantidadEnCarrito).toFixed(2)} total
+                    </span>
+                  </div>
+                  
+                  <button
+                    onClick={handleIncrementar}
+                    disabled={!isAuthenticated || producto.stock <= 0 || cantidadEnCarrito >= producto.stock || actualizandoCarrito}
+                    className="flex items-center justify-center w-10 h-10 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {actualizandoCarrito ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Plus className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={handleComprarAhora}
+                  disabled={!isAuthenticated || actualizandoCarrito}
+                  className="flex-1 border-2 border-orange-600 text-orange-600 px-6 py-4 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-200 font-medium text-lg shadow-md hover:shadow-lg disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  Ir al Carrito
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-4 mb-6">
+                <button 
+                  onClick={handleAgregarAlCarritoClick}
+                  disabled={!isAuthenticated || producto.stock <= 0 || actualizandoCarrito}
+                  className="flex-1 bg-orange-600 text-white px-6 py-4 rounded-xl hover:bg-orange-700 transition-all duration-200 flex items-center justify-center gap-3 font-medium text-lg shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:shadow-md"
+                >
+                  {actualizandoCarrito ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-6 h-6" />
+                      Agregar al Carrito
+                    </>
+                  )}
+                </button>
+                <button 
+                  onClick={handleComprarAhora}
+                  disabled={!isAuthenticated || producto.stock <= 0 || actualizandoCarrito}
+                  className="flex-1 border-2 border-orange-600 text-orange-600 px-6 py-4 rounded-xl hover:bg-orange-600 hover:text-white transition-all duration-200 font-medium text-lg shadow-md hover:shadow-lg disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  {actualizandoCarrito ? 'Agregando...' : 'Comprar Ahora'}
+                </button>
+              </div>
+            )}
+
             <div className="border-t pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="flex flex-col">
                   <span className="font-medium text-gray-700 mb-1">Disponibilidad</span>
                   <span className={`font-semibold ${producto.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {producto.stock > 0 ? 'En stock' : 'Sin stock'}
+                    {producto.stock > 0 ? `En stock (${producto.stock} disponibles)` : 'Sin stock'}
                   </span>
                 </div>
                 <div className="flex flex-col">
@@ -369,7 +550,6 @@ const StoreProductDetail = () => {
           </div>
         </div>
 
-        {/* Descripción en ancho completo - ABAJO DE TODO */}
         {producto.descripcion && (
           <div className="mt-8 pt-8 border-t">
             <h3 className="font-semibold text-gray-800 mb-4 text-xl">Descripción del Producto</h3>

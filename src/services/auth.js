@@ -1,5 +1,4 @@
 import apiClient from "./apiClient";
-
 let instance = null;
 
 class AuthService {
@@ -187,7 +186,7 @@ class AuthService {
 
   _getRolNombre() {
     if (!this.currentUser || !this.currentUser.rol) return null;
-    return this.currentUser.rol; // Ahora siempre será string
+    return this.currentUser.rol; 
   }
 
   isSuperAdmin() {

@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
+import carritoService from '@/services/carritoService.js';
 
 const StoreHeader = ({ store }) => {
   const { isAuthenticated, customer, logout } = useCustomerAuth();
@@ -20,18 +21,47 @@ const StoreHeader = ({ store }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // --- 1. AÑADIR ESTADO PARA EL CONTEO DEL CARRITO ---
+  const [totalItems, setTotalItems] = useState(0);
+
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const storeHomeUrl = `/tienda/${slug}`;
 
+  // --- 2. SUSCRIBIRSE A LOS CAMBIOS DEL CARRITO ---
+  useEffect(() => {
+    // Función para actualizar el conteo
+    const updateCartCount = () => {
+      if (isAuthenticated && slug) {
+        const count = carritoService.getTotalItems(slug);
+        setTotalItems(count);
+      } else {
+        setTotalItems(0); // Limpiar si no está autenticado o no hay slug
+      }
+    };
+
+    // Llamar una vez al cargar
+    updateCartCount();
+
+    // Suscribirse a cambios futuros (ej. si añade un producto)
+    const unsubscribe = carritoService.suscribirACambios(updateCartCount);
+
+    // Limpiar la suscripción al desmontar el componente
+    return () => unsubscribe();
+
+  }, [slug, isAuthenticated]); // Se actualiza si el slug o la autenticación cambian
+
   const handleLogout = () => {
     logout();
+    carritoService.limpiarCarritosLocales();
     setIsDropdownOpen(false);
     setIsMobileMenuOpen(false);
   };
 
   const handleCartClick = () => {
     navigate(`/tienda/${slug}/carrito`);
+    setIsMobileMenuOpen(false); // Cerrar menú móvil si se hace clic
   };
 
   useEffect(() => {
@@ -49,6 +79,7 @@ const StoreHeader = ({ store }) => {
   }, []);
 
   if (!store) {
+    // (El componente de carga se queda igual)
     return (
       <header className="bg-gradient-to-r from-orange-500 to-red-600 shadow-lg">
         <nav className="container mx-auto px-4 lg:px-6 py-3 flex justify-between items-center h-16">
@@ -66,6 +97,7 @@ const StoreHeader = ({ store }) => {
     <header className="bg-gradient-to-r from-orange-500 to-red-600 shadow-lg sticky top-0 z-50">
       <nav className="container mx-auto px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
+          {/* (Logo e info de la tienda se quedan igual) */}
           <div className="flex items-center gap-3 md:gap-4">
             <Link
               to="/tiendas"
@@ -90,13 +122,22 @@ const StoreHeader = ({ store }) => {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <>
+                {/* --- 3. MODIFICAR BOTÓN DE CARRITO (ESCRITORIO) --- */}
                 <button 
                   onClick={handleCartClick}
-                  className="p-2 text-white rounded-lg hover:bg-white/20 transition-colors"
+                  className="relative p-2 text-white rounded-lg hover:bg-white/20 transition-colors"
                 >
                   <ShoppingCart className="w-5 h-5" />
+                  
+                  {/* --- LA BURBUJA (BADGE) --- */}
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white shadow-md">
+                      {totalItems}
+                    </span>
+                  )}
                 </button>
                 
+                {/* (El menú de usuario se queda igual) */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -140,6 +181,7 @@ const StoreHeader = ({ store }) => {
                 </div>
               </>
             ) : (
+              // (Botones de Login/Registro se quedan igual)
               <>
                 <Link 
                   to="/tiendas/login"
@@ -160,6 +202,7 @@ const StoreHeader = ({ store }) => {
             )}
           </div>
 
+          {/* (Botón de menú móvil se queda igual) */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2 text-white rounded-lg hover:bg-white/20 transition-colors"
@@ -168,6 +211,7 @@ const StoreHeader = ({ store }) => {
           </button>
         </div>
 
+        {/* --- 3. MODIFICAR BOTÓN DE CARRITO (MÓVIL) --- */}
         {isMobileMenuOpen && (
           <div ref={mobileMenuRef} className="md:hidden mt-4 pb-2 border-t border-white/20 pt-4">
             {isAuthenticated ? (
@@ -176,10 +220,20 @@ const StoreHeader = ({ store }) => {
                   onClick={handleCartClick}
                   className="flex items-center gap-3 w-full p-3 text-white rounded-lg hover:bg-white/20 transition-colors"
                 >
-                  <ShoppingCart className="w-5 h-5" />
-                  Mi Carrito
+                  {/* Envolvemos el ícono para posicionar la burbuja */}
+                  <div className="relative">
+                    <ShoppingCart className="w-5 h-5" />
+                    {/* --- LA BURBUJA (BADGE) --- */}
+                    {totalItems > 0 && (
+                      <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white shadow-md">
+                        {totalItems}
+                      </span>
+                    )}
+                  </div>
+                  <span>Mi Carrito</span>
                 </button>
                 
+                {/* (Resto del menú móvil se queda igual) */}
                 <Link
                   to="/perfil"
                   className="flex items-center gap-3 w-full p-3 text-white rounded-lg hover:bg-white/20 transition-colors"
@@ -207,6 +261,7 @@ const StoreHeader = ({ store }) => {
                 </button>
               </div>
             ) : (
+              // (Menú móvil para invitados se queda igual)
               <div className="space-y-3">
                 <Link 
                   to="/tiendas/login"
